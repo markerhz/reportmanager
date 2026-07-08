@@ -1,0 +1,1442 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Live Event Report Manager</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Noto+Sans+Thai:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.5.0/chart.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script src="https://www.gstatic.com/firebasejs/12.15.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/12.15.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/12.15.0/firebase-firestore-compat.js"></script>
+<style>
+  :root{
+    --bg: #F5F7FA;
+    --surface: #FFFFFF;
+    --surface-2: #FAFBFC;
+    --border: #E2E7EE;
+    --ink: #23303E;
+    --ink-soft: #66748A;
+    --ink-faint: #9AA6B5;
+    --navy: #1F3A5F;
+    --navy-deep: #16283F;
+    --blue: #3B6EA5;
+    --blue-soft: #EAF1F9;
+    --pass: #48A57C;
+    --pass-bg: #E7F5EE;
+    --fix: #D9695F;
+    --fix-bg: #FBEAE8;
+    --issue: #D9A234;
+    --issue-bg: #FBF3E0;
+    --wait: #8B96A5;
+    --wait-bg: #EEF0F3;
+    --radius: 12px;
+    --shadow: 0 1px 2px rgba(23,42,64,0.04), 0 4px 16px rgba(23,42,64,0.05);
+    --mono: 'JetBrains Mono', monospace;
+    --sans: 'Inter', 'Noto Sans Thai', sans-serif;
+  }
+  *{ box-sizing:border-box; }
+  html,body{ margin:0; padding:0; }
+  body{
+    font-family: var(--sans);
+    background: var(--bg);
+    color: var(--ink);
+    -webkit-font-smoothing: antialiased;
+  }
+  /* ===== Header ===== */
+  header.topbar{
+    background: linear-gradient(180deg, var(--navy) 0%, var(--navy-deep) 100%);
+    color:#fff;
+    padding: 18px 28px 0 28px;
+    position: sticky; top:0; z-index: 50;
+  }
+  .topbar-inner{ display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:12px; }
+  .brand{ display:flex; align-items:center; gap:12px; }
+  .brand-mark{
+    width:36px; height:36px; border-radius:9px;
+    background: rgba(255,255,255,0.08);
+    display:flex; align-items:center; justify-content:center;
+    border:1px solid rgba(255,255,255,0.15);
+  }
+  .brand-mark svg{ width:20px; height:20px; }
+  .brand-text h1{ font-size:16px; margin:0; font-weight:700; letter-spacing:0.2px; }
+  .brand-text p{ margin:1px 0 0; font-size:11.5px; color:rgba(255,255,255,0.55); font-family: var(--mono); letter-spacing:0.5px; }
+  .live-chip{
+    display:flex; align-items:center; gap:7px;
+    background: rgba(255,255,255,0.07);
+    border:1px solid rgba(255,255,255,0.14);
+    padding:6px 12px; border-radius:20px;
+    font-family: var(--mono); font-size:11.5px; color:rgba(255,255,255,0.85);
+  }
+  .tally-dot{ width:8px; height:8px; border-radius:50%; background:var(--pass); box-shadow: 0 0 0 3px rgba(72,165,124,0.25); }
+  nav.tabs{ display:flex; gap:2px; margin-top:16px; }
+  nav.tabs button{
+    background:none; border:none; color:rgba(255,255,255,0.6);
+    font-family: var(--sans); font-size:13.5px; font-weight:600;
+    padding:10px 18px; cursor:pointer; border-radius: 8px 8px 0 0;
+    border-bottom:2px solid transparent; transition: all .15s ease;
+  }
+  nav.tabs button:hover{ color:#fff; background:rgba(255,255,255,0.05); }
+  nav.tabs button.active{ color:#fff; background: var(--bg); border-bottom:2px solid var(--blue); color:var(--navy); }
+
+  main{ max-width:1180px; margin:0 auto; padding:24px 20px 60px; }
+  .view{ display:none; animation: fadein .2s ease; }
+  .view.active{ display:block; }
+  @keyframes fadein{ from{opacity:0; transform:translateY(4px);} to{opacity:1; transform:translateY(0);} }
+
+  h2.section-title{ font-size:18px; margin:0 0 4px; font-weight:700; color:var(--navy); }
+  p.section-sub{ margin:0 0 18px; color:var(--ink-soft); font-size:13px; }
+
+  .card{ background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); box-shadow:var(--shadow); }
+  .card-pad{ padding:18px 20px; }
+
+  /* ===== Dashboard ===== */
+  .period-bar{ display:flex; align-items:center; gap:10px; flex-wrap:wrap; margin-bottom:18px; }
+  .seg{ display:flex; background:var(--surface-2); border:1px solid var(--border); border-radius:9px; padding:3px; }
+  .seg button{ border:none; background:none; padding:7px 14px; font-size:12.5px; font-weight:600; color:var(--ink-soft); border-radius:6px; cursor:pointer; font-family:var(--sans); }
+  .seg button.active{ background:var(--navy); color:#fff; }
+  .week-nav{ display:flex; align-items:center; gap:6px; }
+  .week-nav button{ width:30px; height:30px; border-radius:7px; border:1px solid var(--border); background:var(--surface); cursor:pointer; color:var(--ink-soft); font-size:14px; }
+  .week-nav button:hover{ background:var(--surface-2); }
+  .week-label{ font-family:var(--mono); font-size:12.5px; color:var(--navy); font-weight:600; background:var(--blue-soft); padding:7px 12px; border-radius:7px; min-width:190px; text-align:center; }
+  .range-inputs{ display:flex; gap:8px; align-items:center; }
+  input[type="date"], input[type="text"], input[type="time"], select, textarea{
+    font-family: var(--sans); font-size:13px; padding:8px 10px; border-radius:8px; border:1px solid var(--border);
+    background:#fff; color:var(--ink); outline:none;
+  }
+  input:focus, select:focus, textarea:focus{ border-color:var(--blue); box-shadow:0 0 0 3px rgba(59,110,165,0.12); }
+
+  .stat-grid{ display:grid; grid-template-columns:repeat(5,1fr); gap:14px; margin-bottom:20px; }
+  @media (max-width:900px){ .stat-grid{ grid-template-columns:repeat(2,1fr);} }
+  .stat-card{ padding:16px 18px; }
+  .stat-card .label{ font-size:11.5px; color:var(--ink-faint); text-transform:uppercase; letter-spacing:0.5px; font-weight:600; }
+  .stat-card .value{ font-family:var(--mono); font-size:26px; font-weight:600; margin-top:6px; color:var(--navy); }
+  .stat-card.pass .value{ color:var(--pass); }
+  .stat-card.fix .value{ color:var(--fix); }
+  .stat-card.issue .value{ color:var(--issue); }
+  .stat-card.wait .value{ color:var(--wait); }
+
+  .chart-grid{ display:grid; grid-template-columns: 1.4fr 1fr; gap:16px; margin-bottom:20px; }
+  @media (max-width:900px){ .chart-grid{ grid-template-columns:1fr; } }
+  .chart-card h3{ font-size:13.5px; margin:0 0 14px; color:var(--navy); font-weight:700; }
+  .chart-wrap{ position:relative; height:260px; }
+
+  .followup-list{ list-style:none; margin:0; padding:0; }
+  .followup-list li{ display:flex; gap:10px; align-items:flex-start; padding:10px 0; border-bottom:1px solid var(--border); font-size:12.5px; }
+  .followup-list li:last-child{ border-bottom:none; }
+  .followup-list .fdate{ font-family:var(--mono); color:var(--ink-faint); min-width:64px; }
+  .followup-list .fmeta{ color:var(--ink-soft); }
+  .followup-list .fnote{ color:var(--ink); margin-top:2px; }
+  .empty-note{ color:var(--ink-faint); font-size:12.5px; text-align:center; padding:24px 0; }
+
+  /* status pill */
+  .pill{ display:inline-flex; align-items:center; gap:6px; padding:4px 10px; border-radius:20px; font-size:11.5px; font-weight:700; font-family:var(--sans); }
+  .pill .dot{ width:7px; height:7px; border-radius:50%; }
+  .pill.Pass{ background:var(--pass-bg); color:var(--pass); } .pill.Pass .dot{ background:var(--pass); box-shadow:0 0 0 2px rgba(72,165,124,0.25);}
+  .pill.Fix{ background:var(--fix-bg); color:var(--fix); } .pill.Fix .dot{ background:var(--fix); box-shadow:0 0 0 2px rgba(217,105,95,0.25);}
+  .pill.Issue{ background:var(--issue-bg); color:var(--issue); } .pill.Issue .dot{ background:var(--issue); box-shadow:0 0 0 2px rgba(217,162,52,0.25);}
+  .pill.Wait{ background:var(--wait-bg); color:var(--wait); } .pill.Wait .dot{ background:var(--wait); box-shadow:0 0 0 2px rgba(139,150,165,0.25);}
+
+  /* ===== Data entry ===== */
+  .entry-toolbar{ display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; margin-bottom:16px; }
+  .btn{ font-family:var(--sans); font-size:13px; font-weight:600; padding:9px 16px; border-radius:8px; border:1px solid var(--border); background:#fff; color:var(--navy); cursor:pointer; display:inline-flex; align-items:center; gap:7px; transition:all .12s; }
+  .btn:hover{ background:var(--surface-2); border-color:var(--blue); }
+  .btn.primary{ background:var(--navy); color:#fff; border-color:var(--navy); }
+  .btn.primary:hover{ background:var(--navy-deep); }
+  .btn.danger{ color:var(--fix); }
+  .btn.danger:hover{ background:var(--fix-bg); border-color:var(--fix); }
+  .btn.ghost{ border-color:transparent; background:transparent; }
+  .btn:disabled{ opacity:0.4; cursor:not-allowed; }
+  .btn.sm{ padding:6px 11px; font-size:12px; }
+
+  .form-grid{ display:grid; grid-template-columns:repeat(4,1fr); gap:12px; margin-bottom:14px; }
+  @media (max-width:900px){ .form-grid{ grid-template-columns:repeat(2,1fr);} }
+  .form-grid label{ display:block; font-size:11px; font-weight:600; color:var(--ink-soft); margin-bottom:5px; text-transform:uppercase; letter-spacing:0.3px; }
+  .form-grid .full{ grid-column: 1 / -1; }
+  .form-grid input, .form-grid select, .form-grid textarea{ width:100%; }
+
+  .filter-bar{ display:flex; gap:10px; align-items:center; flex-wrap:wrap; margin:18px 0 12px; }
+  .filter-bar input[type=text]{ min-width:220px; }
+
+  table.data-table{ width:100%; border-collapse:collapse; font-size:12.5px; }
+  table.data-table thead th{ text-align:left; padding:10px 12px; background:var(--surface-2); color:var(--ink-soft); font-weight:700; font-size:11px; text-transform:uppercase; letter-spacing:0.4px; border-bottom:1px solid var(--border); white-space:nowrap; }
+  table.data-table tbody td{ padding:10px 12px; border-bottom:1px solid var(--border); vertical-align:top; }
+  table.data-table tbody tr:hover{ background:var(--surface-2); }
+  table.data-table .mono{ font-family:var(--mono); color:var(--ink-soft); }
+  .row-actions{ display:flex; gap:6px; }
+  .icon-btn{ width:28px; height:28px; border-radius:6px; border:1px solid var(--border); background:#fff; cursor:pointer; display:flex; align-items:center; justify-content:center; color:var(--ink-soft); }
+  .icon-btn:hover{ background:var(--surface-2); color:var(--navy); }
+  .icon-btn.del:hover{ color:var(--fix); border-color:var(--fix); }
+
+  .table-scroll{ overflow-x:auto; }
+
+  /* modal */
+  .modal-overlay{ position:fixed; inset:0; background:rgba(22,40,63,0.45); display:none; align-items:center; justify-content:center; z-index:100; padding:20px; }
+  .modal-overlay.active{ display:flex; }
+  .modal{ background:#fff; border-radius:14px; max-width:720px; width:100%; max-height:88vh; overflow:auto; box-shadow:0 20px 60px rgba(0,0,0,0.25); }
+  .modal-head{ padding:18px 22px; border-bottom:1px solid var(--border); display:flex; justify-content:space-between; align-items:center; }
+  .modal-head h3{ margin:0; font-size:15px; color:var(--navy); }
+  .modal-body{ padding:20px 22px; }
+  .modal-foot{ padding:16px 22px; border-top:1px solid var(--border); display:flex; justify-content:flex-end; gap:10px; }
+  textarea#bulkPasteArea{ width:100%; height:140px; font-family:var(--mono); font-size:12px; resize:vertical; }
+  .hint-box{ background:var(--blue-soft); border:1px solid #D6E4F3; border-radius:9px; padding:12px 14px; font-size:12px; color:var(--navy); margin-bottom:14px; line-height:1.6; }
+  .preview-wrap{ margin-top:14px; max-height:260px; overflow:auto; border:1px solid var(--border); border-radius:9px; }
+  .preview-wrap table{ width:100%; border-collapse:collapse; font-size:11.5px; }
+  .preview-wrap th, .preview-wrap td{ padding:6px 8px; border-bottom:1px solid var(--border); white-space:nowrap; }
+  .preview-wrap th{ background:var(--surface-2); position:sticky; top:0; }
+  .badge-warn{ background:var(--issue-bg); color:var(--issue); font-size:10px; padding:2px 6px; border-radius:6px; font-weight:700; }
+
+  .export-menu{ position:relative; display:inline-block; }
+  .export-dropdown{ position:absolute; right:0; top:calc(100% + 6px); background:#fff; border:1px solid var(--border); border-radius:9px; box-shadow:var(--shadow); min-width:220px; display:none; z-index:20; overflow:hidden; }
+  .export-dropdown.active{ display:block; }
+  .export-dropdown button{ width:100%; text-align:left; padding:10px 14px; border:none; background:none; font-size:12.5px; font-family:var(--sans); cursor:pointer; color:var(--ink); }
+  .export-dropdown button:hover{ background:var(--surface-2); }
+  .export-dropdown .divider{ height:1px; background:var(--border); margin:2px 0; }
+  .export-dropdown label{ display:flex; align-items:center; gap:8px; padding:10px 14px; font-size:12px; color:var(--ink-soft); }
+
+  /* ===== Manual ===== */
+  .manual-wrap{ max-width:840px; }
+  .manual-toc{ display:flex; flex-wrap:wrap; gap:8px; margin-bottom:22px; }
+  .manual-toc a{ font-size:12px; text-decoration:none; color:var(--navy); background:var(--blue-soft); padding:7px 13px; border-radius:20px; font-weight:600; }
+  .manual-toc a:hover{ background:#D6E4F3; }
+  .manual-section{ margin-bottom:28px; scroll-margin-top:100px; }
+  .manual-section h3{ font-size:16px; color:var(--navy); display:flex; align-items:center; gap:10px; margin-bottom:10px; }
+  .step-num{ width:26px; height:26px; border-radius:50%; background:var(--navy); color:#fff; font-family:var(--mono); font-size:12px; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+  .manual-section p, .manual-section li{ font-size:13.5px; line-height:1.8; color:var(--ink); }
+  .manual-section ol, .manual-section ul{ padding-left:20px; }
+  .kbd{ font-family:var(--mono); background:var(--surface-2); border:1px solid var(--border); border-radius:5px; padding:1px 6px; font-size:12px; }
+  .callout{ border-left:3px solid var(--issue); background:var(--issue-bg); padding:12px 16px; border-radius:8px; font-size:13px; color:#7a5a17; margin-top:10px; }
+  .callout.info{ border-left-color:var(--blue); background:var(--blue-soft); color:var(--navy); }
+  code.field{ background:var(--surface-2); border:1px solid var(--border); padding:1px 7px; border-radius:5px; font-family:var(--mono); font-size:12px; color:var(--navy); }
+
+  /* ===== Full report ===== */
+  .report-head{ display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; padding:16px 20px; border-bottom:1px solid var(--border); }
+  .report-head h3{ margin:0; font-size:14.5px; color:var(--navy); font-weight:700; }
+  .report-chips{ display:flex; gap:8px; }
+  .report-chip{ font-family:var(--mono); font-size:11.5px; font-weight:600; background:var(--surface-2); border:1px solid var(--border); color:var(--ink-soft); padding:6px 12px; border-radius:20px; }
+  .report-chip.pass{ background:var(--pass-bg); color:var(--pass); border-color:transparent; }
+  table.report-table tbody tr.status-Pass{ background:#F3FAF6; }
+  table.report-table tbody tr.status-Fix{ background:#FDF3F2; }
+  table.report-table tbody tr.status-Issue{ background:#FDF8EC; }
+  table.report-table tbody tr.status-Wait{ background:#F5F6F8; }
+  table.report-table tbody tr:hover{ filter:brightness(0.98); }
+  .date-sep td{ background:var(--surface-2) !important; font-family:var(--mono); font-size:11px; font-weight:700; color:var(--navy); padding:7px 12px !important; letter-spacing:0.3px; }
+
+  @media print{
+    header.topbar, nav.tabs, .entry-toolbar, .period-bar, .filter-bar, .btn, .icon-btn, .row-actions { display:none !important; }
+    table.data-table:not(.report-table) th:last-child, table.data-table:not(.report-table) td:last-child { display:none !important; }
+    body{ background:#fff; }
+    main{ max-width:100%; padding:0; }
+    .card{ box-shadow:none; border:none; }
+  }
+
+  /* ===== Login gate ===== */
+  .app-hidden{ display:none !important; }
+  #loginGate{ position:fixed; inset:0; background: linear-gradient(180deg, var(--navy) 0%, var(--navy-deep) 100%); display:flex; align-items:center; justify-content:center; z-index:200; padding:20px; }
+  #loginGate.hidden{ display:none; }
+  .login-card{ background:#fff; border-radius:16px; padding:32px 30px; max-width:380px; width:100%; box-shadow:0 20px 60px rgba(0,0,0,0.3); }
+  .login-brand{ display:flex; align-items:center; gap:10px; margin-bottom:6px; }
+  .login-brand-mark{ width:34px; height:34px; border-radius:9px; background:var(--blue-soft); display:flex; align-items:center; justify-content:center; }
+  .login-brand-mark svg{ width:18px; height:18px; }
+  .login-card h1{ font-size:16px; margin:0; color:var(--navy); }
+  .login-card p.sub{ color:var(--ink-soft); font-size:12.5px; margin:2px 0 22px; }
+  .login-card label{ display:block; font-size:11px; font-weight:600; color:var(--ink-soft); margin-bottom:5px; text-transform:uppercase; }
+  .login-card input{ width:100%; margin-bottom:14px; }
+  .login-error{ background:var(--fix-bg); color:var(--fix); font-size:12.5px; padding:9px 12px; border-radius:8px; margin-top:6px; }
+  .user-chip{ display:flex; align-items:center; gap:6px; font-family:var(--mono); font-size:11.5px; color:rgba(255,255,255,0.75); background:rgba(255,255,255,0.07); border:1px solid rgba(255,255,255,0.14); padding:6px 12px; border-radius:20px; }
+
+  /* ===== Column mapping (bulk paste) ===== */
+  .mapping-scroll{ overflow-x:auto; border-radius:9px; border:1px solid var(--border); }
+  table.mapping-table{ border-collapse:collapse; width:max-content; min-width:100%; }
+  table.mapping-table th, table.mapping-table td{ border-bottom:1px solid var(--border); border-right:1px solid var(--border); padding:7px 9px; font-size:11.5px; white-space:nowrap; }
+  table.mapping-table th{ background:var(--surface-2); color:var(--ink-soft); font-family:var(--mono); text-align:left; font-weight:700; }
+  table.mapping-table td.sample{ color:var(--ink-faint); font-size:11px; max-width:150px; overflow:hidden; text-overflow:ellipsis; }
+  table.mapping-table select{ font-size:11.5px; padding:4px 6px; }
+
+  ::-webkit-scrollbar{ width:9px; height:9px; }
+  ::-webkit-scrollbar-thumb{ background:#CBD4DE; border-radius:6px; }
+  ::-webkit-scrollbar-track{ background:transparent; }
+</style>
+</head>
+<body>
+
+<div id="loginGate">
+  <div class="login-card">
+    <div class="login-brand">
+      <div class="login-brand-mark">
+        <svg viewBox="0 0 24 24" fill="none" stroke="#1F3A5F" stroke-width="1.6"><circle cx="12" cy="12" r="3"/><path d="M7.5 7.5a6.5 6.5 0 0 0 0 9M16.5 7.5a6.5 6.5 0 0 1 0 9M4.2 4.2a11 11 0 0 0 0 15.6M19.8 4.2a11 11 0 0 1 0 15.6"/></svg>
+      </div>
+      <h1>Live Event Report Manager</h1>
+    </div>
+    <p class="sub">เข้าสู่ระบบด้วยบัญชีที่ได้รับสิทธิ์ใช้งาน</p>
+    <label>Email</label>
+    <input type="email" id="loginEmail" placeholder="you@example.com">
+    <label>Password</label>
+    <input type="password" id="loginPassword" placeholder="รหัสผ่าน">
+    <button class="btn primary" id="loginBtn" style="width:100%; justify-content:center;">เข้าสู่ระบบ</button>
+    <div class="login-error" id="loginError" style="display:none;"></div>
+  </div>
+</div>
+
+<div id="appRoot" class="app-hidden">
+
+<header class="topbar">
+  <div class="topbar-inner">
+    <div class="brand">
+      <div class="brand-mark">
+        <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.6"><circle cx="12" cy="12" r="3"/><path d="M7.5 7.5a6.5 6.5 0 0 0 0 9M16.5 7.5a6.5 6.5 0 0 1 0 9M4.2 4.2a11 11 0 0 0 0 15.6M19.8 4.2a11 11 0 0 1 0 15.6"/></svg>
+      </div>
+      <div class="brand-text">
+        <h1>Live Event Report Manager</h1>
+        <p id="dateStamp">FEED LOG &amp; DASHBOARD</p>
+      </div>
+    </div>
+    <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
+      <div class="live-chip"><span class="tally-dot"></span> <span id="totalChip">0 feeds logged</span></div>
+      <div class="user-chip">👤 <span id="userEmailChip"></span></div>
+      <button class="btn sm ghost" id="logoutBtn" style="color:#fff; border-color:rgba(255,255,255,0.25);">ออกจากระบบ</button>
+    </div>
+  </div>
+  <nav class="tabs">
+    <button class="tab-btn active" data-view="dashboard">📊 Dashboard</button>
+    <button class="tab-btn" data-view="entry">📝 บันทึกข้อมูล</button>
+    <button class="tab-btn" data-view="report">📄 รายงานทั้งหมด</button>
+    <button class="tab-btn" data-view="manual">📖 วิธีใช้</button>
+  </nav>
+</header>
+
+<main>
+
+  <!-- ============ DASHBOARD ============ -->
+  <section class="view active" id="view-dashboard">
+    <h2 class="section-title">ภาพรวมรีพอร์ต</h2>
+    <p class="section-sub">สรุปสถานะฟีดตามช่วงเวลาที่เลือก</p>
+
+    <div class="period-bar">
+      <div class="seg" id="periodSeg">
+        <button data-period="week" class="active">รายสัปดาห์</button>
+        <button data-period="range">กำหนดช่วงเอง</button>
+        <button data-period="all">ทั้งหมด</button>
+      </div>
+      <div class="week-nav" id="weekNavWrap">
+        <button id="weekPrev">‹</button>
+        <div class="week-label" id="weekLabel">–</div>
+        <button id="weekNext">›</button>
+      </div>
+      <div class="range-inputs" id="rangeWrap" style="display:none;">
+        <input type="date" id="rangeStart"> <span style="color:var(--ink-faint);">ถึง</span> <input type="date" id="rangeEnd">
+      </div>
+    </div>
+
+    <div class="stat-grid">
+      <div class="card stat-card"><div class="label">ฟีดทั้งหมด</div><div class="value" id="statTotal">0</div></div>
+      <div class="card stat-card pass"><div class="label">Pass</div><div class="value" id="statPass">0</div></div>
+      <div class="card stat-card fix"><div class="label">Fix</div><div class="value" id="statFix">0</div></div>
+      <div class="card stat-card issue"><div class="label">Issue</div><div class="value" id="statIssue">0</div></div>
+      <div class="card stat-card wait"><div class="label">Wait</div><div class="value" id="statWait">0</div></div>
+    </div>
+
+    <div class="chart-grid">
+      <div class="card card-pad chart-card">
+        <h3>สถานะฟีดรายวัน (Pass / Fix / Issue / Wait)</h3>
+        <div class="chart-wrap"><canvas id="chartByDate"></canvas></div>
+      </div>
+      <div class="card card-pad chart-card">
+        <h3>จำนวนการใช้งานต่อ Channel</h3>
+        <div class="chart-wrap"><canvas id="chartByChannel"></canvas></div>
+      </div>
+    </div>
+
+    <div class="card card-pad">
+      <h3 style="font-size:13.5px; margin:0 0 6px; color:var(--navy); font-weight:700;">รายการที่ต้องติดตาม (ไม่ผ่าน / มีหมายเหตุ)</h3>
+      <ul class="followup-list" id="followupList"></ul>
+    </div>
+  </section>
+
+  <!-- ============ DATA ENTRY ============ -->
+  <section class="view" id="view-entry">
+    <h2 class="section-title">บันทึกข้อมูลฟีด</h2>
+    <p class="section-sub">เพิ่มทีละรายการ หรือวางข้อมูลจาก Excel ได้ทีเดียวหลายแถว</p>
+
+    <div class="card card-pad" style="margin-bottom:18px;">
+      <div class="form-grid">
+        <div><label>วันที่</label><input type="date" id="f_date"></div>
+        <div><label>Name</label><input type="text" id="f_name" placeholder="เช่น PGA, Rajadamnern"></div>
+        <div class="full" style="grid-column: span 2;"><label>Feed name</label><input type="text" id="f_feed" placeholder="เช่น SRT - John Deere Classic - Feed A"></div>
+        <div><label>Channel</label><input type="text" id="f_channel" list="channelList" placeholder="เช่น PLAY SPORTS 61"></div>
+        <div><label>เวลาเริ่ม (GMT+7)</label><input type="text" id="f_start" placeholder="1:00"></div>
+        <div><label>เวลาจบ (GMT+7)</label><input type="text" id="f_end" placeholder="6:00"></div>
+        <div>
+          <label>Status</label>
+          <select id="f_status">
+            <option value="Pass">Pass</option>
+            <option value="Fix">Fix</option>
+            <option value="Issue">Issue</option>
+            <option value="Wait">Wait</option>
+          </select>
+        </div>
+        <div class="full"><label>หมายเหตุ</label><input type="text" id="f_note" placeholder="รายละเอียดเพิ่มเติม เช่น incident / สาเหตุ"></div>
+      </div>
+      <datalist id="channelList"></datalist>
+      <div style="display:flex; gap:10px;">
+        <button class="btn primary" id="saveRowBtn">＋ เพิ่มรายการ</button>
+        <button class="btn ghost" id="cancelEditBtn" style="display:none;">ยกเลิกการแก้ไข</button>
+        <button class="btn" id="openBulkBtn" style="margin-left:auto;">📋 วางข้อมูลจาก Excel</button>
+      </div>
+    </div>
+
+    <div class="entry-toolbar">
+      <div class="filter-bar" style="margin:0;">
+        <input type="text" id="searchBox" placeholder="ค้นหา ชื่อ / feed / channel...">
+        <select id="statusFilter">
+          <option value="">สถานะทั้งหมด</option>
+          <option value="Pass">Pass</option>
+          <option value="Fix">Fix</option>
+          <option value="Issue">Issue</option>
+          <option value="Wait">Wait</option>
+        </select>
+        <input type="date" id="filterFrom"> <span style="color:var(--ink-faint); font-size:12px;">–</span> <input type="date" id="filterTo">
+        <button class="btn sm ghost" id="clearFiltersBtn">ล้างตัวกรอง</button>
+      </div>
+      <div style="display:flex; gap:8px;">
+        <button class="btn danger sm" id="deleteSelectedBtn" disabled>🗑 ลบที่เลือก</button>
+        <div class="export-menu">
+          <button class="btn sm" id="exportBtn">⬇ Export</button>
+          <div class="export-dropdown" id="exportDropdown">
+            <label><input type="checkbox" id="exportFilteredOnly" checked> เฉพาะรายการที่กรองอยู่</label>
+            <div class="divider"></div>
+            <button id="exportCsvBtn">Export เป็น CSV (.csv)</button>
+            <button id="exportXlsxBtn">Export เป็น Excel (.xlsx)</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="table-scroll">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th><input type="checkbox" id="selectAllChk"></th>
+              <th>Date</th><th>Name</th><th>Feed name</th><th>Channel</th><th>Start</th><th>End</th><th>Status</th><th>หมายเหตุ</th><th></th>
+            </tr>
+          </thead>
+          <tbody id="tableBody"></tbody>
+        </table>
+      </div>
+      <div class="empty-note" id="emptyNote" style="display:none;">ยังไม่มีข้อมูล — เริ่มเพิ่มรายการด้านบน หรือวางข้อมูลจาก Excel</div>
+    </div>
+  </section>
+
+  <!-- ============ FULL REPORT ============ -->
+  <section class="view" id="view-report">
+    <h2 class="section-title">รายงานทั้งหมด</h2>
+    <p class="section-sub">แสดงทุกรายการเรียงตามวันที่และเวลา เหมือนรีพอร์ตต้นฉบับ</p>
+
+    <div class="period-bar">
+      <div class="seg" id="reportPeriodSeg">
+        <button data-period="all" class="active">ทั้งหมด</button>
+        <button data-period="week">รายสัปดาห์</button>
+        <button data-period="range">กำหนดช่วงเอง</button>
+      </div>
+      <div class="week-nav" id="reportWeekNavWrap" style="display:none;">
+        <button id="reportWeekPrev">‹</button>
+        <div class="week-label" id="reportWeekLabel">–</div>
+        <button id="reportWeekNext">›</button>
+      </div>
+      <div class="range-inputs" id="reportRangeWrap" style="display:none;">
+        <input type="date" id="reportFrom"> <span style="color:var(--ink-faint);">ถึง</span> <input type="date" id="reportTo">
+      </div>
+    </div>
+
+    <div class="entry-toolbar" style="justify-content:flex-end;">
+      <div style="display:flex; gap:8px;">
+        <button class="btn sm" id="reportImageBtn">📸 บันทึกเป็นภาพ</button>
+        <button class="btn sm" id="reportPrintBtn">🖨 พิมพ์</button>
+        <div class="export-menu">
+          <button class="btn sm" id="reportExportBtn">⬇ Export</button>
+          <div class="export-dropdown" id="reportExportDropdown">
+            <button id="reportExportCsvBtn">Export เป็น CSV (.csv)</button>
+            <button id="reportExportXlsxBtn">Export เป็น Excel (.xlsx)</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="report-head">
+        <h3 id="reportTitle">Live Event Report — ข้อมูลทั้งหมด</h3>
+        <div class="report-chips">
+          <span class="report-chip" id="reportTotalChip">0 total feeds</span>
+          <span class="report-chip pass" id="reportPassChip">0 Pass</span>
+        </div>
+      </div>
+      <div class="table-scroll">
+        <table class="data-table report-table">
+          <thead>
+            <tr><th>Date</th><th>Name</th><th>Feed name</th><th>Channel</th><th>GMT+7 (Start)</th><th>GMT+7 (End)</th><th>Status</th><th>หมายเหตุ</th></tr>
+          </thead>
+          <tbody id="reportTableBody"></tbody>
+        </table>
+      </div>
+      <div class="empty-note" id="reportEmptyNote" style="display:none;">ยังไม่มีข้อมูลในช่วงที่เลือก</div>
+    </div>
+  </section>
+
+  <!-- ============ MANUAL ============ -->
+  <section class="view" id="view-manual">
+    <h2 class="section-title">คู่มือการใช้งาน</h2>
+    <p class="section-sub">อ่านตามลำดับได้เลยครับ ใช้เวลาไม่นาน</p>
+
+    <div class="manual-wrap">
+      <div class="manual-toc">
+        <a href="#m1">1. เริ่มต้นใช้งาน & Login</a>
+        <a href="#m2">2. เพิ่มข้อมูลทีละแถว</a>
+        <a href="#m3">3. วางข้อมูลจาก Excel (เลือกคอลัมน์เอง)</a>
+        <a href="#m4">4. แก้ไข / ลบข้อมูล</a>
+        <a href="#m5">5. ดู Dashboard</a>
+        <a href="#m6">6. รายงานทั้งหมด & บันทึกเป็นภาพ</a>
+        <a href="#m7">7. Export ไฟล์</a>
+        <a href="#m8">8. ข้อควรระวัง & บัญชีผู้ใช้</a>
+      </div>
+
+      <div class="manual-section" id="m1">
+        <h3><span class="step-num">1</span> เริ่มต้นใช้งาน & Login</h3>
+        <p>เว็บนี้เก็บข้อมูลไว้ส่วนกลาง (ไม่ใช่ในเครื่องแต่ละคนแล้ว) ทุกคนในทีมที่มีบัญชีจะเห็นข้อมูลชุดเดียวกัน แบบอัปเดตทันทีเมื่อมีคนกรอกข้อมูลใหม่</p>
+        <ul>
+          <li>ต้องมี**อินเทอร์เน็ต**ตลอดเวลาที่ใช้งาน (ข้อมูลอยู่บนคลาวด์ ไม่ใช่ในเครื่อง)</li>
+          <li>เปิดหน้าเว็บแล้วจะเจอหน้า Login ก่อนเสมอ ใส่ **Email + Password** ที่ได้รับจากผู้ดูแลระบบ</li>
+          <li>ถ้ายังไม่มีบัญชี ให้ติดต่อผู้ดูแลระบบ (ผู้ที่ตั้งค่า Firebase) ให้สร้างบัญชีให้ก่อน</li>
+        </ul>
+        <div class="callout info">พอ login ครั้งเดียวแล้ว เบราว์เซอร์จะจำไว้ให้ ไม่ต้อง login ใหม่ทุกครั้งที่เปิด จนกว่าจะกด "ออกจากระบบ" เอง</div>
+      </div>
+
+      <div class="manual-section" id="m2">
+        <h3><span class="step-num">2</span> วิธีเพิ่มข้อมูลทีละแถว</h3>
+        <p>ไปที่แท็บ <b>📝 บันทึกข้อมูล</b> กรอกข้อมูลในฟอร์มด้านบน:</p>
+        <ol>
+          <li>เลือก <code class="field">วันที่</code></li>
+          <li>ใส่ <code class="field">Name</code>, <code class="field">Feed name</code>, <code class="field">Channel</code></li>
+          <li>ใส่เวลาเริ่ม-จบ (พิมพ์แบบข้อความ เช่น <span class="kbd">1:00</span>)</li>
+          <li>เลือก <code class="field">Status</code>: Pass / Fix / Issue / Wait</li>
+          <li>กดปุ่ม <b>"＋ เพิ่มรายการ"</b> ข้อมูลจะไปโผล่ในตารางด้านล่างทันที</li>
+        </ol>
+      </div>
+
+      <div class="manual-section" id="m3">
+        <h3><span class="step-num">3</span> วางข้อมูลจาก Excel (เลือกคอลัมน์เอง)</h3>
+        <p>เหมาะเมื่อมีข้อมูลอยู่ใน Excel อยู่แล้ว (เช่นชีทจองฟีดที่ใช้งานจริง ซึ่งมีคอลัมน์เยอะ) และอยากใส่เข้าระบบทีเดียวหลายบรรทัด โดย<b>ไม่ต้องตัดคอลัมน์ที่ไม่ใช้ออกก่อน</b></p>
+        <ol>
+          <li>เลือกช่วงเซลล์ทั้งหมดที่ต้องการ (จะมีกี่คอลัมน์ก็ได้) แล้วกด <span class="kbd">Ctrl+C</span></li>
+          <li>กลับมาที่เว็บ กดปุ่ม <b>"📋 วางข้อมูลจาก Excel"</b> แล้ววาง <span class="kbd">Ctrl+V</span> ในกล่องข้อความ</li>
+          <li>ถ้าข้อมูลที่ copy มามีแถวหัวตาราง (เช่น "Date", "Name"...) ให้ติ๊ก <b>"แถวแรกเป็นหัวตาราง ให้ข้ามไป"</b></li>
+          <li>กด <b>"แยกคอลัมน์ →"</b> ระบบจะแสดงตารางคอลัมน์เป็นตัวอักษร A, B, C... เหมือนใน Excel</li>
+          <li>ใต้แต่ละคอลัมน์จะมี dropdown ให้เลือกว่าคอลัมน์นั้นคือ <code class="field">Date</code>, <code class="field">Name</code>, <code class="field">Feed name</code>, <code class="field">Channel</code>, <code class="field">เวลาเริ่ม</code>, <code class="field">เวลาจบ</code>, <code class="field">Status</code>, <code class="field">หมายเหตุ</code> หรือ <b>"— ไม่ใช้ —"</b> (มีแถวตัวอย่างข้อมูลจริงให้ดูใต้ dropdown ช่วยตัดสินใจ)</li>
+          <li>ด้านล่างจะมีตาราง "ตัวอย่างผลลัพธ์หลัง map" อัปเดตให้ดูสดๆ ทุกครั้งที่เปลี่ยน dropdown</li>
+          <li>กด <b>"ยืนยันเพิ่มข้อมูล"</b> เพื่อนำเข้าทั้งหมดในครั้งเดียว เข้า Firestore ให้ทุกคนเห็นทันที</li>
+        </ol>
+        <div class="callout">ระบบจะ<b>จำการตั้งค่า mapping ไว้ให้</b> ถ้าครั้งต่อไปวางข้อมูลจากชีทเดิม (จำนวนคอลัมน์เท่าเดิม) จะตั้งค่าให้อัตโนมัติ ไม่ต้องเลือกใหม่ทุกครั้ง (ปรับใหม่ได้เสมอถ้าโครงสร้างชีทเปลี่ยน)</div>
+        <div class="callout info">ถ้าไม่ map คอลัมน์ไหนเป็น Status ระบบจะตั้งค่าเริ่มต้นเป็น <b>"Wait"</b> ให้ทุกแถวอัตโนมัติ ไปแก้เป็น Pass/Fix ทีหลังตอนฟีดออกอากาศจริงได้ในตาราง<br><br>เรื่องวันที่: ระบบอ่านได้หลายแบบ (เช่น 5-Jul-26, 07-01-2026, 5-ก.ค.-26) ถ้าเจอรูปแบบที่อ่านไม่ออกจะขึ้นป้าย <span class="badge-warn">ตรวจสอบ</span> แทนการเดาผิด ให้ไปแก้เองในตารางทีหลัง</div>
+      </div>
+
+      <div class="manual-section" id="m4">
+        <h3><span class="step-num">4</span> แก้ไข / ลบข้อมูล</h3>
+        <ul>
+          <li><b>แก้ไข:</b> กดไอคอนดินสอ ✎ ท้ายแถว ข้อมูลจะขึ้นมาที่ฟอร์มด้านบนให้แก้ไข แล้วกด "บันทึกการแก้ไข"</li>
+          <li><b>ลบทีละแถว:</b> กดไอคอนถังขยะ 🗑 ท้ายแถว</li>
+          <li><b>ลบหลายแถวพร้อมกัน:</b> ติ๊กเลือกช่องหน้าแถวที่ต้องการ (หรือติ๊กที่หัวตารางเพื่อเลือกทั้งหมด) แล้วกดปุ่ม "ลบที่เลือก" ด้านบนตาราง</li>
+        </ul>
+      </div>
+
+      <div class="manual-section" id="m5">
+        <h3><span class="step-num">5</span> ดู Dashboard และเลือกช่วงเวลา</h3>
+        <ul>
+          <li><b>รายสัปดาห์:</b> ใช้ปุ่ม ‹ › เพื่อเลื่อนดูสัปดาห์ก่อนหน้า/ถัดไป</li>
+          <li><b>กำหนดช่วงเอง:</b> เลือกวันที่เริ่มต้น-สิ้นสุดตามต้องการ</li>
+          <li><b>ทั้งหมด:</b> ดูสรุปข้อมูลทุกช่วงเวลาที่มี</li>
+        </ul>
+        <p>การ์ดด้านบนสรุปจำนวนฟีดและสถานะ กราฟซ้ายแสดงจำนวน Pass/Fix/Issue/Wait รายวัน กราฟขวาแสดงว่าแต่ละ Channel ถูกใช้กี่ครั้งในช่วงที่เลือก และด้านล่างมีรายการที่ต้องติดตาม (รายการที่ไม่ผ่าน หรือมีหมายเหตุ) ให้ดูง่ายๆ โดยไม่ต้องไล่ดูทั้งตาราง</p>
+      </div>
+
+      <div class="manual-section" id="m6">
+        <h3><span class="step-num">6</span> รายงานทั้งหมด & บันทึกเป็นภาพ</h3>
+        <p>แท็บ <b>📄 รายงานทั้งหมด</b> แสดงทุกฟีดต่อเนื่องกัน เรียงตามวันที่แล้วเวลาเริ่ม (ไม่มีเส้นคั่นระหว่างวัน) เหมือนรีพอร์ตต้นฉบับ</p>
+        <ul>
+          <li><b>ทั้งหมด:</b> ดูทุกฟีดที่มีในระบบ</li>
+          <li><b>รายสัปดาห์:</b> ใช้ปุ่ม ‹ › เลื่อนดูทีละสัปดาห์</li>
+          <li><b>กำหนดช่วงเอง:</b> เลือกวันที่เริ่ม-สิ้นสุดเอง</li>
+        </ul>
+        <p>กดปุ่ม <b>"📸 บันทึกเป็นภาพ"</b> เพื่อ export ตารางที่กรองอยู่เป็นไฟล์ **PNG** หน้าตาเรียบๆ เหมือนรีพอร์ต Excel ต้นฉบับ (พื้นขาว เส้นตารางบาง แถว Pass ไฮไลต์เขียวอ่อน) พร้อมหัวเรื่องช่วงวันที่แบบอังกฤษ เหมาะสำหรับส่งต่อในแชทหรือแนบอีเมลได้ทันที</p>
+      </div>
+
+      <div class="manual-section" id="m7">
+        <h3><span class="step-num">7</span> Export ไฟล์</h3>
+        <ol>
+          <li>ไปที่แท็บ 📝 บันทึกข้อมูล กดปุ่ม <b>"⬇ Export"</b></li>
+          <li>เลือกได้ว่าจะ Export <b>เฉพาะรายการที่กรองอยู่</b> หรือทั้งหมด (ติ๊ก/ไม่ติ๊กช่องนั้น)</li>
+          <li>เลือก Export เป็น <b>CSV</b> (เปิดได้ทั้ง Excel/Google Sheets) หรือ <b>Excel (.xlsx)</b> โดยตรง</li>
+          <li>ไฟล์จะถูกดาวน์โหลดลงเครื่องตามค่าเริ่มต้นของเบราว์เซอร์ (ปกติคือโฟลเดอร์ Downloads)</li>
+        </ol>
+      </div>
+
+      <div class="manual-section" id="m8">
+        <h3><span class="step-num">8</span> ข้อควรระวัง & บัญชีผู้ใช้</h3>
+        <div class="callout">
+          ข้อมูลทั้งหมดเก็บไว้ที่ส่วนกลาง (Firebase) <b>ใช้ร่วมกันทั้งทีม แบบเรียลไทม์</b><br><br>
+          สิ่งที่ควรรู้:
+          <ul style="margin-top:6px;">
+            <li>ต้องมีอินเทอร์เน็ตตลอดเวลาที่ใช้งาน ถ้าเน็ตหลุด การกรอก/แก้ไขข้อมูลจะไม่ถูกบันทึก</li>
+            <li>ทุกคนที่ login เห็นข้อมูลชุดเดียวกัน แก้ไข/ลบมีผลกับทุกคนทันที ระวังการลบผิดรายการ</li>
+            <li><b>ห้ามแชร์รหัสผ่านบัญชีให้คนนอกทีม</b> เพราะเป็นบัญชีที่มีสิทธิ์แก้ไขข้อมูลจริงทั้งหมด</li>
+            <li>ถ้าลืมรหัสผ่าน หรืออยากเพิ่ม/ลบสมาชิกในทีม ต้องให้ผู้ดูแลระบบ (แอดมิน) ไปจัดการที่ Firebase Console โดยตรง</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+</div> <!-- /#appRoot -->
+
+<!-- Bulk Paste Modal -->
+<div class="modal-overlay" id="bulkModal">
+  <div class="modal" style="max-width:920px;">
+    <div class="modal-head">
+      <h3>📋 วางข้อมูลจาก Excel</h3>
+      <button class="icon-btn" id="closeBulkModal">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="hint-box">
+        คัดลอกข้อมูลทั้งตารางจาก Excel มาได้เลย (ไม่ต้องตัดคอลัมน์ก่อน) วางในกล่องด้านล่าง แล้วเลือกว่าแต่ละคอลัมน์คือข้อมูลอะไร ระบบจะจำการตั้งค่านี้ไว้ให้ใช้ครั้งต่อไปอัตโนมัติ
+      </div>
+      <textarea id="bulkPasteArea" placeholder="วางข้อมูลตรงนี้ (Ctrl+V)..."></textarea>
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-top:10px; flex-wrap:wrap; gap:10px;">
+        <label style="display:flex; align-items:center; gap:7px; font-size:12.5px; color:var(--ink-soft);">
+          <input type="checkbox" id="skipHeaderChk"> แถวแรกเป็นหัวตาราง ให้ข้ามไป
+        </label>
+        <button class="btn sm" id="parseBulkBtn">แยกคอลัมน์ →</button>
+      </div>
+
+      <div id="mappingWrap" style="display:none; margin-top:16px;">
+        <div style="font-size:12px; font-weight:700; color:var(--navy); margin-bottom:8px;">เลือกว่าแต่ละคอลัมน์คือข้อมูลอะไร:</div>
+        <div class="mapping-scroll">
+          <table class="mapping-table" id="mappingTable"></table>
+        </div>
+
+        <div style="font-size:12px; font-weight:700; color:var(--navy); margin:16px 0 8px;">ตัวอย่างผลลัพธ์หลัง map (<span id="mappedCount">0</span> แถว):</div>
+        <div class="preview-wrap" id="previewWrap" style="display:none;">
+          <table id="previewTable"></table>
+        </div>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn ghost" id="cancelBulkBtn">ยกเลิก</button>
+      <button class="btn primary" id="confirmBulkBtn" style="display:none;">ยืนยันเพิ่มข้อมูล</button>
+    </div>
+  </div>
+</div>
+
+<!-- Hidden capture container for PNG export (plain style, mimics original Excel report) -->
+<div id="captureRoot" style="position:fixed; left:-99999px; top:0; width:1160px; background:#ffffff; font-family: Arial, Helvetica, sans-serif; border:1px solid #b9c6d6;">
+  <div style="padding:14px 18px; text-align:center; border-bottom:2px solid #2255a4;">
+    <h2 style="margin:0; font-size:19px; color:#1a2b3c;">Live Event Weekly Report (<span id="capRange"></span>)</h2>
+  </div>
+  <div style="display:flex; justify-content:space-between; align-items:center; padding:10px 18px; border-bottom:1px solid #d7dee6; font-size:13px; color:#3a4553;">
+    <div><b id="capTotal">0</b> total feeds</div>
+    <div style="background:#e5f3e6; color:#2f7d3c; padding:4px 12px; border-radius:5px; font-weight:bold;"><span id="capPass">0</span> Pass</div>
+  </div>
+  <table style="width:100%; border-collapse:collapse; font-size:12px;">
+    <thead>
+      <tr style="background:#f4f6f8; color:#3a4553;">
+        <th style="padding:8px 10px; text-align:left; border-bottom:1px solid #d7dee6;">Date</th>
+        <th style="padding:8px 10px; text-align:left; border-bottom:1px solid #d7dee6;">NAME</th>
+        <th style="padding:8px 10px; text-align:left; border-bottom:1px solid #d7dee6;">Feed name</th>
+        <th style="padding:8px 10px; text-align:left; border-bottom:1px solid #d7dee6;">Channel</th>
+        <th style="padding:8px 10px; text-align:left; border-bottom:1px solid #d7dee6;">GMT+7 (START)</th>
+        <th style="padding:8px 10px; text-align:left; border-bottom:1px solid #d7dee6;">GMT+7 (END)</th>
+        <th style="padding:8px 10px; text-align:left; border-bottom:1px solid #d7dee6;">Status</th>
+      </tr>
+    </thead>
+    <tbody id="capTableBody"></tbody>
+  </table>
+</div>
+
+<script>
+(function(){
+  const STATUSES = ['Pass','Fix','Issue','Wait'];
+  const DEFAULT_CHANNELS = ['PLAY SPORTS 39','PLAY SPORTS 41','PLAY SPORTS 57','PLAY SPORTS 61','PLAY SPORTS 62','PLAY SPORTS 64','PLAY SPORTS 69','REC'];
+
+  // ---------- Firebase ----------
+  const firebaseConfig = {
+    apiKey: "AIzaSyBBLvRBaa67AYYpfha3CQRe8Peny4YtlKs",
+    authDomain: "live-event-report.firebaseapp.com",
+    projectId: "live-event-report",
+    storageBucket: "live-event-report.firebasestorage.app",
+    messagingSenderId: "1022586400260",
+    appId: "1:1022586400260:web:adcbda4202a7daa2decf51"
+  };
+  firebase.initializeApp(firebaseConfig);
+  const auth = firebase.auth();
+  const db = firebase.firestore();
+  let unsubscribeSnapshot = null;
+  let weekAnchorAutoSet = false, reportWeekAnchorAutoSet = false;
+
+  document.getElementById('loginBtn').addEventListener('click', async ()=>{
+    const email = document.getElementById('loginEmail').value.trim();
+    const pw = document.getElementById('loginPassword').value;
+    const errEl = document.getElementById('loginError');
+    errEl.style.display = 'none';
+    if(!email || !pw) return;
+    try{
+      await auth.signInWithEmailAndPassword(email, pw);
+    }catch(e){
+      errEl.textContent = 'เข้าสู่ระบบไม่สำเร็จ: อีเมลหรือรหัสผ่านไม่ถูกต้อง';
+      errEl.style.display = 'block';
+    }
+  });
+  document.getElementById('loginPassword').addEventListener('keydown', e=>{
+    if(e.key==='Enter') document.getElementById('loginBtn').click();
+  });
+  document.getElementById('logoutBtn').addEventListener('click', ()=> auth.signOut());
+
+  auth.onAuthStateChanged(user=>{
+    if(user){
+      document.getElementById('loginGate').classList.add('hidden');
+      document.getElementById('appRoot').classList.remove('app-hidden');
+      document.getElementById('userEmailChip').textContent = user.email;
+      startListening();
+    } else {
+      document.getElementById('loginGate').classList.remove('hidden');
+      document.getElementById('appRoot').classList.add('app-hidden');
+      document.getElementById('loginEmail').value = '';
+      document.getElementById('loginPassword').value = '';
+      if(unsubscribeSnapshot){ unsubscribeSnapshot(); unsubscribeSnapshot = null; }
+      records = [];
+    }
+  });
+
+  function startListening(){
+    if(unsubscribeSnapshot) unsubscribeSnapshot();
+    unsubscribeSnapshot = db.collection('feeds').onSnapshot(snapshot=>{
+      records = snapshot.docs.map(d=> ({ id: d.id, ...d.data() }));
+      if(!weekAnchorAutoSet && records.length){
+        const latestDate = records.map(r=>r.date).filter(Boolean).sort().pop();
+        if(latestDate){ weekAnchor = startOfWeek(parseISO(latestDate)); }
+        weekAnchorAutoSet = true;
+      }
+      if(!reportWeekAnchorAutoSet && records.length){
+        const latestDate = records.map(r=>r.date).filter(Boolean).sort().pop();
+        if(latestDate){ reportWeekAnchor = startOfWeek(parseISO(latestDate)); }
+        reportWeekAnchorAutoSet = true;
+      }
+      refreshChannelList();
+      renderTable();
+      if(typeof Chart !== 'undefined') updateDashboard();
+    }, err=>{
+      console.error(err);
+      alert('เชื่อมต่อฐานข้อมูลผิดพลาด: ' + err.message);
+    });
+  }
+
+  let records = [];
+  let editingId = null;
+  let selectedIds = new Set();
+  let currentPeriod = 'week';
+  let weekAnchor = startOfWeek(new Date());
+  let reportPeriod = 'all';
+  let reportWeekAnchor = startOfWeek(new Date());
+  let chartByDate, chartByChannel;
+
+  // ---------- date helpers ----------
+  function pad(n){ return n.toString().padStart(2,'0'); }
+  function toISO(d){ return d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate()); }
+  function parseISO(s){ const [y,m,d] = s.split('-').map(Number); return new Date(y, m-1, d); }
+  function displayDate(iso){
+    if(!iso) return '';
+    const d = parseISO(iso);
+    return pad(d.getDate())+'-'+pad(d.getMonth()+1)+'-'+(d.getFullYear()%100);
+  }
+  function startOfWeek(date){
+    const d = new Date(date);
+    const day = (d.getDay()+6)%7; // Monday=0
+    d.setDate(d.getDate()-day);
+    d.setHours(0,0,0,0);
+    return d;
+  }
+  function addDays(date, n){ const d = new Date(date); d.setDate(d.getDate()+n); return d; }
+  const THAI_MONTHS = ['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
+  function thaiShort(d){ return d.getDate()+' '+THAI_MONTHS[d.getMonth()]; }
+  const ENGLISH_MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+  function engDate(d){ return d.getDate()+' '+ENGLISH_MONTHS[d.getMonth()]; }
+
+  const EN_MONTHS = {jan:1,feb:2,mar:3,apr:4,may:5,jun:6,jul:7,aug:8,sep:9,oct:10,nov:11,dec:12};
+  const TH_MONTHS_MAP = {'ม.ค.':1,'ก.พ.':2,'มี.ค.':3,'เม.ย.':4,'พ.ค.':5,'มิ.ย.':6,'ก.ค.':7,'ส.ค.':8,'ก.ย.':9,'ต.ค.':10,'พ.ย.':11,'ธ.ค.':12};
+
+  function parseDateFlexible(str){
+    if(!str) return null;
+    str = str.trim();
+    let m;
+    if(m = str.match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/)) return `${m[1]}-${pad(+m[2])}-${pad(+m[3])}`;
+    if(m = str.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{2,4})$/)){
+      let [_, a, b, y] = m;
+      if(y.length===2) y = (+y<70? '20':'19')+y;
+      return `${y}-${pad(+b)}-${pad(+a)}`;
+    }
+    if(m = str.match(/^(\d{1,2})[-\/\s]([A-Za-z]{3,9})[-\/\s](\d{2,4})$/)){
+      const mm = EN_MONTHS[m[2].slice(0,3).toLowerCase()];
+      if(!mm) return null;
+      let y = m[3]; if(y.length===2) y = (+y<70?'20':'19')+y;
+      return `${y}-${pad(mm)}-${pad(+m[1])}`;
+    }
+    if(m = str.match(/^(\d{1,2})[-\/\s]?(ม\.ค\.|ก\.พ\.|มี\.ค\.|เม\.ย\.|พ\.ค\.|มิ\.ย\.|ก\.ค\.|ส\.ค\.|ก\.ย\.|ต\.ค\.|พ\.ย\.|ธ\.ค\.)[-\/\s]?(\d{2,4})$/)){
+      const mm = TH_MONTHS_MAP[m[2]];
+      let y = m[3];
+      if(y.length===4 && +y>2400) y = (+y-543).toString();
+      else if(y.length===2) y = (+y<70?'20':'19')+y;
+      return `${y}-${pad(mm)}-${pad(+m[1])}`;
+    }
+    return null;
+  }
+  function parseTimeToMinutes(str){
+    if(!str) return null;
+    const m = str.trim().match(/^(\d{1,2}):(\d{2})/);
+    if(!m) return null;
+    return (+m[1])*60 + (+m[2]);
+  }
+  function normalizeStatus(s){
+    if(!s) return null;
+    s = s.trim().toLowerCase();
+    if(s.startsWith('pass')) return 'Pass';
+    if(s.startsWith('fix')) return 'Fix';
+    if(s.startsWith('issue')) return 'Issue';
+    if(s.startsWith('wait')) return 'Wait';
+    return null;
+  }
+
+  // ---------- tabs ----------
+  document.querySelectorAll('.tab-btn').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+      btn.classList.add('active');
+      document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
+      document.getElementById('view-'+btn.dataset.view).classList.add('active');
+      if(btn.dataset.view==='dashboard') updateDashboard();
+      if(btn.dataset.view==='report') renderReport();
+    });
+  });
+
+  // ---------- channel datalist ----------
+  function refreshChannelList(){
+    const set = new Set(DEFAULT_CHANNELS);
+    records.forEach(r=> r.channel && set.add(r.channel));
+    const dl = document.getElementById('channelList');
+    dl.innerHTML = Array.from(set).map(c=>`<option value="${escapeHtml(c)}">`).join('');
+  }
+
+  function escapeHtml(s){ return (s||'').toString().replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+
+  // ---------- form add/edit ----------
+  const fDate=document.getElementById('f_date'), fName=document.getElementById('f_name'), fFeed=document.getElementById('f_feed'),
+        fChannel=document.getElementById('f_channel'), fStart=document.getElementById('f_start'), fEnd=document.getElementById('f_end'),
+        fStatus=document.getElementById('f_status'), fNote=document.getElementById('f_note');
+  const saveRowBtn=document.getElementById('saveRowBtn'), cancelEditBtn=document.getElementById('cancelEditBtn');
+
+  fDate.value = toISO(new Date());
+
+  saveRowBtn.addEventListener('click', async ()=>{
+    if(!fDate.value || !fFeed.value.trim()){
+      alert('กรุณากรอกอย่างน้อย วันที่ และ Feed name');
+      return;
+    }
+    const data = {
+      date: fDate.value, name: fName.value.trim(), feed: fFeed.value.trim(),
+      channel: fChannel.value.trim(), start: fStart.value.trim(), end: fEnd.value.trim(),
+      status: fStatus.value, note: fNote.value.trim(),
+      updatedBy: auth.currentUser ? auth.currentUser.email : '', updatedAt: new Date().toISOString()
+    };
+    saveRowBtn.disabled = true;
+    try{
+      if(editingId){
+        await db.collection('feeds').doc(editingId).update(data);
+        exitEditMode();
+      } else {
+        await db.collection('feeds').add(data);
+        resetForm();
+      }
+    }catch(e){
+      alert('บันทึกไม่สำเร็จ: ' + e.message);
+    }
+    saveRowBtn.disabled = false;
+  });
+
+  cancelEditBtn.addEventListener('click', exitEditMode);
+
+  function exitEditMode(){
+    editingId = null;
+    saveRowBtn.textContent = '＋ เพิ่มรายการ';
+    cancelEditBtn.style.display = 'none';
+    resetForm();
+  }
+  function resetForm(){
+    fDate.value = toISO(new Date()); fName.value=''; fFeed.value=''; fChannel.value=''; fStart.value=''; fEnd.value=''; fStatus.value='Pass'; fNote.value='';
+  }
+  function startEdit(id){
+    const r = records.find(x=>x.id===id);
+    if(!r) return;
+    editingId = id;
+    fDate.value=r.date; fName.value=r.name; fFeed.value=r.feed; fChannel.value=r.channel; fStart.value=r.start; fEnd.value=r.end; fStatus.value=r.status; fNote.value=r.note;
+    saveRowBtn.textContent = '💾 บันทึกการแก้ไข';
+    cancelEditBtn.style.display = 'inline-flex';
+    document.getElementById('view-entry').scrollIntoView({behavior:'smooth', block:'start'});
+  }
+
+  // ---------- filters ----------
+  const searchBox=document.getElementById('searchBox'), statusFilter=document.getElementById('statusFilter'),
+        filterFrom=document.getElementById('filterFrom'), filterTo=document.getElementById('filterTo');
+  [searchBox, statusFilter, filterFrom, filterTo].forEach(el=> el.addEventListener('input', renderTable));
+  document.getElementById('clearFiltersBtn').addEventListener('click', ()=>{
+    searchBox.value=''; statusFilter.value=''; filterFrom.value=''; filterTo.value=''; renderTable();
+  });
+
+  function getFiltered(){
+    const q = searchBox.value.trim().toLowerCase();
+    const st = statusFilter.value;
+    const from = filterFrom.value, to = filterTo.value;
+    return records.filter(r=>{
+      if(q && !(`${r.name} ${r.feed} ${r.channel}`.toLowerCase().includes(q))) return false;
+      if(st && r.status!==st) return false;
+      if(from && r.date < from) return false;
+      if(to && r.date > to) return false;
+      return true;
+    }).sort((a,b)=> a.date===b.date ? 0 : (a.date>b.date?-1:1));
+  }
+
+  // ---------- table render ----------
+  const tableBody=document.getElementById('tableBody');
+  const selectAllChk=document.getElementById('selectAllChk');
+  const deleteSelectedBtn=document.getElementById('deleteSelectedBtn');
+
+  function renderTable(){
+    const rows = getFiltered();
+    document.getElementById('emptyNote').style.display = rows.length? 'none':'block';
+    tableBody.innerHTML = rows.map(r=>`
+      <tr>
+        <td><input type="checkbox" class="rowChk" data-id="${r.id}" ${selectedIds.has(r.id)?'checked':''}></td>
+        <td class="mono">${displayDate(r.date)}</td>
+        <td>${escapeHtml(r.name)}</td>
+        <td>${escapeHtml(r.feed)}</td>
+        <td>${escapeHtml(r.channel)}</td>
+        <td class="mono">${escapeHtml(r.start)}</td>
+        <td class="mono">${escapeHtml(r.end)}</td>
+        <td><span class="pill ${r.status}"><span class="dot"></span>${r.status}</span></td>
+        <td>${escapeHtml(r.note)}</td>
+        <td>
+          <div class="row-actions">
+            <button class="icon-btn edit" data-id="${r.id}" title="แก้ไข">✎</button>
+            <button class="icon-btn del" data-id="${r.id}" title="ลบ">🗑</button>
+          </div>
+        </td>
+      </tr>
+    `).join('');
+
+    tableBody.querySelectorAll('.edit').forEach(b=> b.addEventListener('click', ()=> startEdit(b.dataset.id)));
+    tableBody.querySelectorAll('.del').forEach(b=> b.addEventListener('click', async ()=>{
+      if(confirm('ยืนยันลบรายการนี้?')){
+        try{
+          await db.collection('feeds').doc(b.dataset.id).delete();
+          selectedIds.delete(b.dataset.id);
+        }catch(e){ alert('ลบไม่สำเร็จ: ' + e.message); }
+      }
+    }));
+    tableBody.querySelectorAll('.rowChk').forEach(c=> c.addEventListener('change', ()=>{
+      if(c.checked) selectedIds.add(c.dataset.id); else selectedIds.delete(c.dataset.id);
+      updateDeleteBtn();
+    }));
+    updateDeleteBtn();
+    updateTotalChip();
+    renderReport();
+  }
+  function updateDeleteBtn(){ deleteSelectedBtn.disabled = selectedIds.size===0; }
+  function updateTotalChip(){ document.getElementById('totalChip').textContent = records.length+' feeds logged'; }
+
+  selectAllChk.addEventListener('change', ()=>{
+    const rows = getFiltered();
+    if(selectAllChk.checked) rows.forEach(r=>selectedIds.add(r.id));
+    else rows.forEach(r=>selectedIds.delete(r.id));
+    renderTable();
+  });
+  deleteSelectedBtn.addEventListener('click', async ()=>{
+    if(!selectedIds.size) return;
+    if(confirm(`ยืนยันลบ ${selectedIds.size} รายการที่เลือก?`)){
+      try{
+        const batch = db.batch();
+        selectedIds.forEach(id=> batch.delete(db.collection('feeds').doc(id)));
+        await batch.commit();
+        selectedIds.clear();
+      }catch(e){
+        alert('ลบไม่สำเร็จ: ' + e.message);
+      }
+    }
+  });
+
+  // ---------- bulk paste modal (column mapping) ----------
+  const bulkModal=document.getElementById('bulkModal'), bulkPasteArea=document.getElementById('bulkPasteArea');
+  const previewWrap=document.getElementById('previewWrap'), previewTable=document.getElementById('previewTable');
+  const confirmBulkBtn=document.getElementById('confirmBulkBtn');
+  const mappingWrap=document.getElementById('mappingWrap'), mappingTable=document.getElementById('mappingTable');
+  const skipHeaderChk=document.getElementById('skipHeaderChk');
+  let bulkMatrix = [];
+  let columnRoles = [];
+
+  const ROLE_OPTIONS = [
+    ['ignore','— ไม่ใช้ —'], ['date','Date'], ['name','Name'], ['feed','Feed name'],
+    ['channel','Channel'], ['start','เวลาเริ่ม (Start)'], ['end','เวลาจบ (End)'],
+    ['status','Status'], ['note','หมายเหตุ']
+  ];
+
+  document.getElementById('openBulkBtn').addEventListener('click', ()=>{
+    bulkModal.classList.add('active');
+    bulkPasteArea.value = '';
+    skipHeaderChk.checked = false;
+    mappingWrap.style.display = 'none';
+    previewWrap.style.display = 'none';
+    confirmBulkBtn.style.display = 'none';
+    bulkMatrix = []; columnRoles = [];
+  });
+  document.getElementById('closeBulkModal').addEventListener('click', ()=> bulkModal.classList.remove('active'));
+  document.getElementById('cancelBulkBtn').addEventListener('click', ()=> bulkModal.classList.remove('active'));
+
+  function indexToLetter(n){
+    let s = ''; n = n+1;
+    while(n>0){ const rem=(n-1)%26; s = String.fromCharCode(65+rem)+s; n = Math.floor((n-1)/26); }
+    return s;
+  }
+
+  function saveMappingPref(colCount, roles){
+    try{
+      const store = JSON.parse(localStorage.getItem('bulkColumnMappings')||'{}');
+      store[colCount] = roles;
+      localStorage.setItem('bulkColumnMappings', JSON.stringify(store));
+    }catch(e){}
+  }
+  function loadSavedMapping(colCount){
+    try{
+      const store = JSON.parse(localStorage.getItem('bulkColumnMappings')||'{}');
+      return store[colCount] || null;
+    }catch(e){ return null; }
+  }
+
+  document.getElementById('parseBulkBtn').addEventListener('click', ()=>{
+    const raw = bulkPasteArea.value;
+    const lines = raw.split(/\r?\n/).filter(l=>l.trim().length);
+    if(!lines.length){ alert('กรุณาวางข้อมูลก่อน'); return; }
+    bulkMatrix = lines.map(line=> line.split('\t'));
+    const colCount = Math.max(...bulkMatrix.map(r=>r.length));
+    const saved = loadSavedMapping(colCount);
+    columnRoles = saved ? saved.slice(0,colCount) : new Array(colCount).fill('ignore');
+    while(columnRoles.length < colCount) columnRoles.push('ignore');
+    renderMappingTable(colCount);
+    recomputeMappedPreview();
+    mappingWrap.style.display = 'block';
+    confirmBulkBtn.style.display = 'inline-flex';
+  });
+
+  skipHeaderChk.addEventListener('change', ()=>{
+    if(bulkMatrix.length){
+      const colCount = Math.max(...bulkMatrix.map(r=>r.length));
+      renderMappingTable(colCount);
+      recomputeMappedPreview();
+    }
+  });
+
+  function renderMappingTable(colCount){
+    const skipHeader = skipHeaderChk.checked;
+    const sampleRowIdx = skipHeader ? 1 : 0;
+    let headRow = '<tr><th>คอลัมน์</th>';
+    let selectRow = '<tr><th>Map เป็น</th>';
+    let sampleRow = '<tr><th>ตัวอย่าง</th>';
+    for(let i=0;i<colCount;i++){
+      headRow += `<th>${indexToLetter(i)}</th>`;
+      const opts = ROLE_OPTIONS.map(([v,l])=> `<option value="${v}" ${columnRoles[i]===v?'selected':''}>${escapeHtml(l)}</option>`).join('');
+      selectRow += `<td><select class="colRoleSelect" data-col="${i}">${opts}</select></td>`;
+      const sample = (bulkMatrix[sampleRowIdx] && bulkMatrix[sampleRowIdx][i]) ? bulkMatrix[sampleRowIdx][i].trim() : '';
+      sampleRow += `<td class="sample" title="${escapeHtml(sample)}">${escapeHtml(sample.slice(0,18))}</td>`;
+    }
+    headRow += '</tr>'; selectRow += '</tr>'; sampleRow += '</tr>';
+    mappingTable.innerHTML = headRow + selectRow + sampleRow;
+    mappingTable.querySelectorAll('.colRoleSelect').forEach(sel=>{
+      sel.addEventListener('change', ()=>{
+        columnRoles[+sel.dataset.col] = sel.value;
+        recomputeMappedPreview();
+      });
+    });
+  }
+
+  function buildMappedRows(){
+    const skipHeader = skipHeaderChk.checked;
+    const dataRows = skipHeader ? bulkMatrix.slice(1) : bulkMatrix;
+    return dataRows.filter(cols=> cols.some(c=> c && c.trim())).map(cols=>{
+      const rec = {date:'', name:'', feed:'', channel:'', start:'', end:'', status:'', note:''};
+      let dateWarn=false, statusWarn=false;
+      columnRoles.forEach((role, i)=>{
+        if(role==='ignore') return;
+        const val = (cols[i]||'').trim();
+        if(!val) return;
+        if(role==='date'){
+          const iso = parseDateFlexible(val);
+          if(iso===null){ dateWarn = true; } else { rec.date = iso; }
+        } else if(role==='status'){
+          const norm = normalizeStatus(val);
+          if(!norm){ statusWarn = true; } else { rec.status = norm; }
+        } else {
+          rec[role] = val;
+        }
+      });
+      if(!rec.status) rec.status = 'Wait';
+      return {...rec, dateWarn, statusWarn};
+    });
+  }
+
+  function recomputeMappedPreview(){
+    const rows = buildMappedRows();
+    document.getElementById('mappedCount').textContent = rows.length;
+    if(!rows.length){ previewWrap.style.display='none'; return; }
+    let html = '<thead><tr><th>Date</th><th>Name</th><th>Feed</th><th>Channel</th><th>Start</th><th>End</th><th>Status</th><th>หมายเหตุ</th></tr></thead><tbody>';
+    rows.forEach(r=>{
+      html += `<tr><td>${r.date? escapeHtml(displayDate(r.date)) : '<span class="badge-warn">ตรวจสอบ</span>'}</td><td>${escapeHtml(r.name)}</td><td>${escapeHtml(r.feed)}</td><td>${escapeHtml(r.channel)}</td><td>${escapeHtml(r.start)}</td><td>${escapeHtml(r.end)}</td><td>${r.status}${r.statusWarn?' <span class="badge-warn">ตรวจสอบ</span>':''}</td><td>${escapeHtml(r.note)}</td></tr>`;
+    });
+    html += '</tbody>';
+    previewTable.innerHTML = html;
+    previewWrap.style.display = 'block';
+  }
+
+  async function batchAddRecords(rows){
+    const userEmail = auth.currentUser ? auth.currentUser.email : '';
+    const nowIso = new Date().toISOString();
+    for(let i=0;i<rows.length;i+=450){
+      const chunk = rows.slice(i,i+450);
+      const batch = db.batch();
+      chunk.forEach(r=>{
+        const ref = db.collection('feeds').doc();
+        batch.set(ref, { date:r.date, name:r.name, feed:r.feed, channel:r.channel, start:r.start, end:r.end, status:r.status, note:r.note, updatedBy:userEmail, updatedAt:nowIso });
+      });
+      await batch.commit();
+    }
+  }
+
+  confirmBulkBtn.addEventListener('click', async ()=>{
+    const rows = buildMappedRows();
+    if(!rows.length){ alert('ไม่มีข้อมูลให้เพิ่ม'); return; }
+    const colCount = bulkMatrix.length ? Math.max(...bulkMatrix.map(r=>r.length)) : columnRoles.length;
+    saveMappingPref(colCount, columnRoles);
+    confirmBulkBtn.disabled = true;
+    confirmBulkBtn.textContent = 'กำลังบันทึก...';
+    try{
+      await batchAddRecords(rows);
+      bulkModal.classList.remove('active');
+    }catch(e){
+      alert('เพิ่มข้อมูลไม่สำเร็จ: ' + e.message);
+    }
+    confirmBulkBtn.disabled = false;
+    confirmBulkBtn.textContent = 'ยืนยันเพิ่มข้อมูล';
+  });
+
+  // ---------- export ----------
+  const exportBtn=document.getElementById('exportBtn'), exportDropdown=document.getElementById('exportDropdown');
+  exportBtn.addEventListener('click', (e)=>{ e.stopPropagation(); exportDropdown.classList.toggle('active'); });
+  document.addEventListener('click', ()=> exportDropdown.classList.remove('active'));
+  exportDropdown.addEventListener('click', e=> e.stopPropagation());
+
+  function getExportRows(){
+    const onlyFiltered = document.getElementById('exportFilteredOnly').checked;
+    const rows = onlyFiltered ? getFiltered() : records.slice().sort((a,b)=> a.date>b.date?-1:1);
+    return rows.map(r=>({
+      Date: displayDate(r.date), Name: r.name, 'Feed name': r.feed, Channel: r.channel,
+      'GMT+7 (Start)': r.start, 'GMT+7 (End)': r.end, Status: r.status, 'หมายเหตุ': r.note
+    }));
+  }
+
+  document.getElementById('exportCsvBtn').addEventListener('click', ()=>{
+    const rows = getExportRows();
+    if(!rows.length){ alert('ไม่มีข้อมูลให้ export'); return; }
+    const headers = Object.keys(rows[0]);
+    const csv = [headers.join(',')].concat(rows.map(r=> headers.map(h=>`"${(r[h]||'').toString().replace(/"/g,'""')}"`).join(','))).join('\n');
+    const blob = new Blob(['\uFEFF'+csv], {type:'text/csv;charset=utf-8;'});
+    downloadBlob(blob, 'live_event_report.csv');
+  });
+
+  document.getElementById('exportXlsxBtn').addEventListener('click', ()=>{
+    const rows = getExportRows();
+    if(!rows.length){ alert('ไม่มีข้อมูลให้ export'); return; }
+    const ws = XLSX.utils.json_to_sheet(rows);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Report');
+    XLSX.writeFile(wb, 'live_event_report.xlsx');
+  });
+
+  function downloadBlob(blob, filename){
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = filename; document.body.appendChild(a); a.click();
+    document.body.removeChild(a); URL.revokeObjectURL(url);
+  }
+
+  // ---------- full report tab ----------
+  const reportFrom=document.getElementById('reportFrom'), reportTo=document.getElementById('reportTo');
+  const reportPeriodSeg=document.getElementById('reportPeriodSeg'), reportWeekNavWrap=document.getElementById('reportWeekNavWrap'), reportRangeWrap=document.getElementById('reportRangeWrap');
+
+  reportPeriodSeg.querySelectorAll('button').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      reportPeriodSeg.querySelectorAll('button').forEach(b=>b.classList.remove('active'));
+      btn.classList.add('active');
+      reportPeriod = btn.dataset.period;
+      reportWeekNavWrap.style.display = reportPeriod==='week' ? 'flex':'none';
+      reportRangeWrap.style.display = reportPeriod==='range' ? 'flex':'none';
+      renderReport();
+    });
+  });
+  document.getElementById('reportWeekPrev').addEventListener('click', ()=>{ reportWeekAnchor = addDays(reportWeekAnchor,-7); renderReport(); });
+  document.getElementById('reportWeekNext').addEventListener('click', ()=>{ reportWeekAnchor = addDays(reportWeekAnchor,7); renderReport(); });
+  reportFrom.addEventListener('input', renderReport);
+  reportTo.addEventListener('input', renderReport);
+
+  function getReportRows(){
+    let base = records.slice();
+    if(reportPeriod==='week'){
+      const start = toISO(reportWeekAnchor), end = toISO(addDays(reportWeekAnchor,6));
+      document.getElementById('reportWeekLabel').textContent = `${thaiShort(reportWeekAnchor)} – ${thaiShort(addDays(reportWeekAnchor,6))} ${addDays(reportWeekAnchor,6).getFullYear()}`;
+      base = base.filter(r=> r.date>=start && r.date<=end);
+    } else if(reportPeriod==='range'){
+      const s = reportFrom.value, e = reportTo.value;
+      if(s) base = base.filter(r=> r.date>=s);
+      if(e) base = base.filter(r=> r.date<=e);
+    }
+    return base.sort((a,b)=>{
+      if(a.date !== b.date) return a.date < b.date ? -1 : 1;
+      const ta = parseTimeToMinutes(a.start), tb = parseTimeToMinutes(b.start);
+      if(ta===null && tb===null) return 0;
+      if(ta===null) return 1;
+      if(tb===null) return -1;
+      return ta - tb;
+    });
+  }
+
+  function renderReport(){
+    const rows = getReportRows();
+    const passCount = rows.filter(r=>r.status==='Pass').length;
+    document.getElementById('reportTotalChip').textContent = rows.length + ' total feeds';
+    document.getElementById('reportPassChip').textContent = passCount + ' Pass';
+
+    if(reportPeriod==='week'){
+      document.getElementById('reportTitle').textContent = `Live Event Report — สัปดาห์ ${thaiShort(reportWeekAnchor)} – ${thaiShort(addDays(reportWeekAnchor,6))}`;
+    } else if(reportPeriod==='range' && (reportFrom.value||reportTo.value)){
+      document.getElementById('reportTitle').textContent = `Live Event Report — ${reportFrom.value?displayDate(reportFrom.value):'…'} ถึง ${reportTo.value?displayDate(reportTo.value):'…'}`;
+    } else {
+      document.getElementById('reportTitle').textContent = 'Live Event Report — ข้อมูลทั้งหมด';
+    }
+
+    const tbody = document.getElementById('reportTableBody');
+    document.getElementById('reportEmptyNote').style.display = rows.length? 'none':'block';
+    tbody.innerHTML = rows.map(r=>`
+      <tr class="status-${r.status}">
+        <td class="mono">${displayDate(r.date)}</td>
+        <td>${escapeHtml(r.name)}</td>
+        <td>${escapeHtml(r.feed)}</td>
+        <td>${escapeHtml(r.channel)}</td>
+        <td class="mono">${escapeHtml(r.start)}</td>
+        <td class="mono">${escapeHtml(r.end)}</td>
+        <td><span class="pill ${r.status}"><span class="dot"></span>${r.status}</span></td>
+        <td>${escapeHtml(r.note)}</td>
+      </tr>`).join('');
+  }
+
+  document.getElementById('reportPrintBtn').addEventListener('click', ()=> window.print());
+
+  // ---------- save report as PNG image ----------
+  async function exportReportImage(){
+    const rows = getReportRows();
+    if(!rows.length){ alert('ไม่มีข้อมูลให้บันทึกเป็นภาพ'); return; }
+    let rangeLabel;
+    if(reportPeriod==='week'){
+      rangeLabel = `${engDate(reportWeekAnchor)} - ${engDate(addDays(reportWeekAnchor,6))} ${addDays(reportWeekAnchor,6).getFullYear()}`;
+    } else {
+      const first = parseISO(rows[0].date), last = parseISO(rows[rows.length-1].date);
+      rangeLabel = `${engDate(first)} - ${engDate(last)} ${last.getFullYear()}`;
+    }
+    document.getElementById('capRange').textContent = rangeLabel;
+    document.getElementById('capTotal').textContent = rows.length;
+    document.getElementById('capPass').textContent = rows.filter(r=>r.status==='Pass').length;
+
+    const statusBg = {Pass:'#eaf7ec', Fix:'#fceceb', Issue:'#fdf5e2', Wait:'#f2f3f5'};
+    const statusColor = {Pass:'#2f7d3c', Fix:'#b3453c', Issue:'#a97a1f', Wait:'#5f6b7a'};
+    document.getElementById('capTableBody').innerHTML = rows.map(r=>`
+      <tr style="background:${statusBg[r.status]||'#fff'};">
+        <td style="padding:7px 10px; border-bottom:1px solid #e4e9ee; font-family:monospace;">${displayDate(r.date)}</td>
+        <td style="padding:7px 10px; border-bottom:1px solid #e4e9ee;">${escapeHtml(r.name)}</td>
+        <td style="padding:7px 10px; border-bottom:1px solid #e4e9ee;">${escapeHtml(r.feed)}</td>
+        <td style="padding:7px 10px; border-bottom:1px solid #e4e9ee;">${escapeHtml(r.channel)}</td>
+        <td style="padding:7px 10px; border-bottom:1px solid #e4e9ee; font-family:monospace;">${escapeHtml(r.start)}</td>
+        <td style="padding:7px 10px; border-bottom:1px solid #e4e9ee; font-family:monospace;">${escapeHtml(r.end)}</td>
+        <td style="padding:7px 10px; border-bottom:1px solid #e4e9ee; color:${statusColor[r.status]||'#333'}; font-weight:bold;">${r.status}</td>
+      </tr>`).join('');
+
+    const btn = document.getElementById('reportImageBtn');
+    btn.disabled = true; btn.textContent = 'กำลังสร้างภาพ...';
+    try{
+      const canvas = await html2canvas(document.getElementById('captureRoot'), {backgroundColor:'#ffffff', scale:2});
+      canvas.toBlob(blob=>{
+        downloadBlob(blob, `live_event_report_${reportPeriod==='week'?toISO(reportWeekAnchor):'all'}.png`);
+      });
+    }catch(e){
+      alert('สร้างภาพไม่สำเร็จ: ' + e.message);
+    }
+    btn.disabled = false; btn.textContent = '📸 บันทึกเป็นภาพ';
+  }
+  document.getElementById('reportImageBtn').addEventListener('click', exportReportImage);
+
+  const reportExportBtn=document.getElementById('reportExportBtn'), reportExportDropdown=document.getElementById('reportExportDropdown');
+  reportExportBtn.addEventListener('click', (e)=>{ e.stopPropagation(); reportExportDropdown.classList.toggle('active'); });
+  document.addEventListener('click', ()=> reportExportDropdown.classList.remove('active'));
+  reportExportDropdown.addEventListener('click', e=> e.stopPropagation());
+
+  function getReportExportRows(){
+    return getReportRows().map(r=>({
+      Date: displayDate(r.date), Name: r.name, 'Feed name': r.feed, Channel: r.channel,
+      'GMT+7 (Start)': r.start, 'GMT+7 (End)': r.end, Status: r.status, 'หมายเหตุ': r.note
+    }));
+  }
+  document.getElementById('reportExportCsvBtn').addEventListener('click', ()=>{
+    const rows = getReportExportRows();
+    if(!rows.length){ alert('ไม่มีข้อมูลให้ export'); return; }
+    const headers = Object.keys(rows[0]);
+    const csv = [headers.join(',')].concat(rows.map(r=> headers.map(h=>`"${(r[h]||'').toString().replace(/"/g,'""')}"`).join(','))).join('\n');
+    const blob = new Blob(['\uFEFF'+csv], {type:'text/csv;charset=utf-8;'});
+    downloadBlob(blob, 'live_event_full_report.csv');
+  });
+  document.getElementById('reportExportXlsxBtn').addEventListener('click', ()=>{
+    const rows = getReportExportRows();
+    if(!rows.length){ alert('ไม่มีข้อมูลให้ export'); return; }
+    const ws = XLSX.utils.json_to_sheet(rows);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Report');
+    XLSX.writeFile(wb, 'live_event_full_report.xlsx');
+  });
+
+  // ---------- dashboard period control ----------
+  const periodSeg=document.getElementById('periodSeg'), weekNavWrap=document.getElementById('weekNavWrap'), rangeWrap=document.getElementById('rangeWrap');
+  periodSeg.querySelectorAll('button').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      periodSeg.querySelectorAll('button').forEach(b=>b.classList.remove('active'));
+      btn.classList.add('active');
+      currentPeriod = btn.dataset.period;
+      weekNavWrap.style.display = currentPeriod==='week' ? 'flex':'none';
+      rangeWrap.style.display = currentPeriod==='range' ? 'flex':'none';
+      updateDashboard();
+    });
+  });
+  document.getElementById('weekPrev').addEventListener('click', ()=>{ weekAnchor = addDays(weekAnchor,-7); updateDashboard(); });
+  document.getElementById('weekNext').addEventListener('click', ()=>{ weekAnchor = addDays(weekAnchor,7); updateDashboard(); });
+  document.getElementById('rangeStart').addEventListener('change', updateDashboard);
+  document.getElementById('rangeEnd').addEventListener('change', updateDashboard);
+
+  function getPeriodRecords(){
+    if(currentPeriod==='all') return records.slice();
+    if(currentPeriod==='week'){
+      const start = toISO(weekAnchor), end = toISO(addDays(weekAnchor,6));
+      document.getElementById('weekLabel').textContent = `${thaiShort(weekAnchor)} – ${thaiShort(addDays(weekAnchor,6))} ${addDays(weekAnchor,6).getFullYear()}`;
+      return records.filter(r=> r.date>=start && r.date<=end);
+    }
+    if(currentPeriod==='range'){
+      const s = document.getElementById('rangeStart').value, e = document.getElementById('rangeEnd').value;
+      if(!s || !e) return [];
+      return records.filter(r=> r.date>=s && r.date<=e);
+    }
+    return [];
+  }
+
+  function updateDashboard(){
+    const data = getPeriodRecords();
+    const counts = {Pass:0, Fix:0, Issue:0, Wait:0};
+    data.forEach(r=> counts[r.status] = (counts[r.status]||0)+1);
+    document.getElementById('statTotal').textContent = data.length;
+    document.getElementById('statPass').textContent = counts.Pass;
+    document.getElementById('statFix').textContent = counts.Fix;
+    document.getElementById('statIssue').textContent = counts.Issue;
+    document.getElementById('statWait').textContent = counts.Wait;
+
+    // chart by date
+    const dateMap = {};
+    data.forEach(r=>{
+      if(!dateMap[r.date]) dateMap[r.date] = {Pass:0,Fix:0,Issue:0,Wait:0};
+      dateMap[r.date][r.status]++;
+    });
+    const dateKeys = Object.keys(dateMap).sort();
+    const dsColors = {Pass:'#48A57C', Fix:'#D9695F', Issue:'#D9A234', Wait:'#8B96A5'};
+    const datasets = STATUSES.map(st=>({
+      label: st, data: dateKeys.map(k=>dateMap[k][st]), backgroundColor: dsColors[st], borderRadius:4, maxBarThickness:26
+    }));
+    if(chartByDate) chartByDate.destroy();
+    chartByDate = new Chart(document.getElementById('chartByDate'), {
+      type:'bar',
+      data: { labels: dateKeys.map(displayDate), datasets },
+      options: {
+        responsive:true, maintainAspectRatio:false,
+        scales: { x:{ stacked:true, grid:{display:false}, ticks:{font:{family:"'JetBrains Mono', monospace", size:10.5}} }, y:{ stacked:true, beginAtZero:true, ticks:{precision:0} } },
+        plugins: { legend:{ position:'bottom', labels:{ boxWidth:9, font:{size:11} } } }
+      }
+    });
+
+    // chart by channel
+    const chMap = {};
+    data.forEach(r=>{ const c = r.channel||'(ไม่ระบุ)'; chMap[c] = (chMap[c]||0)+1; });
+    const chKeys = Object.keys(chMap).sort((a,b)=> chMap[b]-chMap[a]);
+    if(chartByChannel) chartByChannel.destroy();
+    chartByChannel = new Chart(document.getElementById('chartByChannel'), {
+      type:'bar',
+      data: { labels: chKeys, datasets: [{ data: chKeys.map(k=>chMap[k]), backgroundColor:'#3B6EA5', borderRadius:4, maxBarThickness:28 }] },
+      options: {
+        indexAxis:'y', responsive:true, maintainAspectRatio:false,
+        scales: { x:{ beginAtZero:true, ticks:{precision:0} }, y:{ grid:{display:false}, ticks:{font:{size:11}} } },
+        plugins: { legend:{ display:false } }
+      }
+    });
+
+    // follow-up list
+    const followups = data.filter(r=> r.status!=='Pass' || r.note).sort((a,b)=> a.date<b.date?1:-1);
+    const list = document.getElementById('followupList');
+    if(!followups.length){
+      list.innerHTML = '<li class="empty-note" style="border:none;">ไม่มีรายการที่ต้องติดตามในช่วงนี้ 🎉</li>';
+    } else {
+      list.innerHTML = followups.map(r=>`
+        <li>
+          <span class="fdate mono">${displayDate(r.date)}</span>
+          <div>
+            <div class="fmeta"><span class="pill ${r.status}" style="margin-right:6px;"><span class="dot"></span>${r.status}</span> ${escapeHtml(r.name)} — ${escapeHtml(r.feed)} <span style="color:var(--ink-faint);">(${escapeHtml(r.channel)})</span></div>
+            ${r.note? `<div class="fnote">📌 ${escapeHtml(r.note)}</div>`:''}
+          </div>
+        </li>`).join('');
+    }
+  }
+
+  // ---------- date stamp ----------
+  document.getElementById('dateStamp').textContent = 'FEED LOG & DASHBOARD · ' + new Date().toLocaleDateString('th-TH', {day:'2-digit', month:'short', year:'numeric'});
+
+  // ---------- init ----------
+  document.getElementById('rangeStart').value = toISO(addDays(new Date(),-7));
+  document.getElementById('rangeEnd').value = toISO(new Date());
+  if(typeof Chart === 'undefined'){
+    document.querySelectorAll('.chart-wrap').forEach(el=>{
+      el.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100%;color:var(--fix);font-size:12.5px;text-align:center;padding:0 20px;">โหลดไลบรารีกราฟไม่สำเร็จ กรุณาตรวจสอบการเชื่อมต่ออินเทอร์เน็ตแล้วรีเฟรชหน้านี้</div>';
+    });
+  }
+  // data loading, table/dashboard rendering, and channel list are triggered automatically
+  // once login succeeds (see startListening(), called from onAuthStateChanged above)
+})();
+</script>
+
+</body>
+</html>
