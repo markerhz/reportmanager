@@ -412,16 +412,32 @@
 
     <div class="chart-grid">
       <div class="card card-pad chart-card" id="chartDateCard">
-        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px;">
+        <div style="display:flex; justify-content:space-between; align-items:center; gap:8px; margin-bottom:14px; flex-wrap:wrap;">
           <h3 style="margin:0;">สถานะฟีดรายวัน (Pass / Fix / Issue / Wait)</h3>
-          <button class="icon-btn" id="captureChartDateBtn" data-html2canvas-ignore="true" title="บันทึกภาพเฉพาะกราฟนี้">📸</button>
+          <div style="display:flex; align-items:center; gap:6px;">
+            <select id="chartDateTypeSelect" data-html2canvas-ignore="true" style="font-size:11.5px; padding:5px 8px; border-radius:7px;" title="เลือกชนิดกราฟ">
+              <option value="stackedBar">แท่งซ้อน (Stacked)</option>
+              <option value="groupedBar">แท่งเรียงข้าง (Grouped)</option>
+              <option value="line">เส้น (Line)</option>
+              <option value="area">พื้นที่ไล่สี (Area)</option>
+            </select>
+            <button class="icon-btn" id="captureChartDateBtn" data-html2canvas-ignore="true" title="บันทึกภาพเฉพาะกราฟนี้">📸</button>
+          </div>
         </div>
         <div class="chart-wrap"><canvas id="chartByDate"></canvas></div>
       </div>
       <div class="card card-pad chart-card" id="chartChannelCard">
-        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px;">
+        <div style="display:flex; justify-content:space-between; align-items:center; gap:8px; margin-bottom:14px; flex-wrap:wrap;">
           <h3 style="margin:0;">จำนวนการใช้งานต่อ Channel</h3>
-          <button class="icon-btn" id="captureChartChannelBtn" data-html2canvas-ignore="true" title="บันทึกภาพเฉพาะกราฟนี้">📸</button>
+          <div style="display:flex; align-items:center; gap:6px;">
+            <select id="chartChannelTypeSelect" data-html2canvas-ignore="true" style="font-size:11.5px; padding:5px 8px; border-radius:7px;" title="เลือกชนิดกราฟ">
+              <option value="hbar">แท่งแนวนอน (Horizontal)</option>
+              <option value="vbar">แท่งแนวตั้ง (Vertical)</option>
+              <option value="donut">โดนัท (Donut)</option>
+              <option value="polar">Polar Area</option>
+            </select>
+            <button class="icon-btn" id="captureChartChannelBtn" data-html2canvas-ignore="true" title="บันทึกภาพเฉพาะกราฟนี้">📸</button>
+          </div>
         </div>
         <div class="chart-wrap"><canvas id="chartByChannel"></canvas></div>
       </div>
@@ -1540,8 +1556,99 @@
     statAnimTimers[elId] = requestAnimationFrame(tick);
   }
 
+  let chartDateType = 'stackedBar';
+  let chartChannelType = 'hbar';
+  let lastPeriodData = [];
+  const CHART_TOOLTIP_STYLE = {
+    backgroundColor: '#16283F', titleFont:{family:"'Inter', 'Noto Sans Thai', sans-serif", weight:700, size:12},
+    bodyFont:{family:"'JetBrains Mono', monospace", size:11.5}, padding:10, cornerRadius:8, displayColors:true, boxPadding:4
+  };
+
+  function renderChartByDate(data){
+    const dateMap = {};
+    data.forEach(r=>{
+      if(!dateMap[r.date]) dateMap[r.date] = {Pass:0,Fix:0,Issue:0,Wait:0};
+      dateMap[r.date][r.status]++;
+    });
+    const dateKeys = Object.keys(dateMap).sort();
+    const dsColors = {Pass:'#48A57C', Fix:'#D9695F', Issue:'#D9A234', Wait:'#8B96A5'};
+    const type = chartDateType;
+    const isLineFamily = (type==='line' || type==='area');
+    const stacked = (type==='stackedBar' || type==='area');
+
+    const datasets = STATUSES.map(st=>{
+      const vals = dateKeys.map(k=>dateMap[k][st]);
+      if(isLineFamily){
+        return { label:st, data:vals, borderColor:dsColors[st], backgroundColor: type==='area'? dsColors[st]+'40' : dsColors[st], tension:0.35, fill: type==='area', pointRadius: type==='area'?0:3, pointHoverRadius:5, borderWidth:2 };
+      }
+      return { label:st, data:vals, backgroundColor:dsColors[st], borderRadius:6, borderSkipped:false, maxBarThickness: type==='groupedBar'?18:26 };
+    });
+
+    if(chartByDate) chartByDate.destroy();
+    chartByDate = new Chart(document.getElementById('chartByDate'), {
+      type: isLineFamily ? 'line' : 'bar',
+      data: { labels: dateKeys.map(displayDate), datasets },
+      options: {
+        responsive:true, maintainAspectRatio:false,
+        animation: { duration:600, easing:'easeOutQuart' },
+        scales: {
+          x:{ stacked, grid:{display:false}, ticks:{font:{family:"'JetBrains Mono', monospace", size:10.5}} },
+          y:{ stacked, beginAtZero:true, ticks:{precision:0} }
+        },
+        plugins: { legend:{ position:'bottom', labels:{ boxWidth:9, font:{size:11} } }, tooltip: CHART_TOOLTIP_STYLE }
+      }
+    });
+  }
+
+  function renderChartByChannel(data){
+    const chMap = {};
+    data.forEach(r=>{ const c = r.channel||'(ไม่ระบุ)'; chMap[c] = (chMap[c]||0)+1; });
+    const chKeys = Object.keys(chMap).sort((a,b)=> chMap[b]-chMap[a]);
+    const palette = ['#3B6EA5','#48A57C','#D9A234','#D9695F','#8B96A5','#6B4FA0','#2E8B8B','#C46A9B','#5E7CE2','#B98B3D'];
+    const type = chartChannelType;
+
+    if(chartByChannel) chartByChannel.destroy();
+    let config;
+    if(type==='donut' || type==='polar'){
+      config = {
+        type: type==='donut' ? 'doughnut' : 'polarArea',
+        data: { labels: chKeys, datasets:[{ data: chKeys.map(k=>chMap[k]), backgroundColor: chKeys.map((_,i)=>palette[i%palette.length]) }] },
+        options: {
+          responsive:true, maintainAspectRatio:false,
+          animation:{duration:600, easing:'easeOutQuart'},
+          plugins:{ legend:{ position:'right', labels:{boxWidth:9, font:{size:10.5}} }, tooltip: CHART_TOOLTIP_STYLE }
+        }
+      };
+    } else {
+      const horizontal = type==='hbar';
+      config = {
+        type:'bar',
+        data:{ labels: chKeys, datasets:[{ data: chKeys.map(k=>chMap[k]), backgroundColor:'#3B6EA5', hoverBackgroundColor:'#2E5A8C', borderRadius:6, borderSkipped:false, maxBarThickness:28 }] },
+        options:{
+          indexAxis: horizontal?'y':'x', responsive:true, maintainAspectRatio:false,
+          animation:{duration:600, easing:'easeOutQuart'},
+          scales: horizontal
+            ? { x:{ beginAtZero:true, ticks:{precision:0} }, y:{ grid:{display:false}, ticks:{font:{size:11}} } }
+            : { x:{ grid:{display:false}, ticks:{font:{size:10.5}} }, y:{ beginAtZero:true, ticks:{precision:0} } },
+          plugins:{ legend:{ display:false }, tooltip: CHART_TOOLTIP_STYLE }
+        }
+      };
+    }
+    chartByChannel = new Chart(document.getElementById('chartByChannel'), config);
+  }
+
+  document.getElementById('chartDateTypeSelect').addEventListener('change', e=>{
+    chartDateType = e.target.value;
+    renderChartByDate(lastPeriodData);
+  });
+  document.getElementById('chartChannelTypeSelect').addEventListener('change', e=>{
+    chartChannelType = e.target.value;
+    renderChartByChannel(lastPeriodData);
+  });
+
   function updateDashboard(){
     const data = getPeriodRecords();
+    lastPeriodData = data;
     const counts = {Pass:0, Fix:0, Issue:0, Wait:0};
     data.forEach(r=> counts[r.status] = (counts[r.status]||0)+1);
     animateStatNumber('statTotal', data.length);
@@ -1550,48 +1657,8 @@
     animateStatNumber('statIssue', counts.Issue);
     animateStatNumber('statWait', counts.Wait);
 
-    // chart by date
-    const dateMap = {};
-    data.forEach(r=>{
-      if(!dateMap[r.date]) dateMap[r.date] = {Pass:0,Fix:0,Issue:0,Wait:0};
-      dateMap[r.date][r.status]++;
-    });
-    const dateKeys = Object.keys(dateMap).sort();
-    const dsColors = {Pass:'#48A57C', Fix:'#D9695F', Issue:'#D9A234', Wait:'#8B96A5'};
-    const datasets = STATUSES.map(st=>({
-      label: st, data: dateKeys.map(k=>dateMap[k][st]), backgroundColor: dsColors[st], borderRadius:6, borderSkipped:false, maxBarThickness:26
-    }));
-    const tooltipStyle = {
-      backgroundColor: '#16283F', titleFont:{family:"'Inter', 'Noto Sans Thai', sans-serif", weight:700, size:12},
-      bodyFont:{family:"'JetBrains Mono', monospace", size:11.5}, padding:10, cornerRadius:8, displayColors:true, boxPadding:4
-    };
-    if(chartByDate) chartByDate.destroy();
-    chartByDate = new Chart(document.getElementById('chartByDate'), {
-      type:'bar',
-      data: { labels: dateKeys.map(displayDate), datasets },
-      options: {
-        responsive:true, maintainAspectRatio:false,
-        animation: { duration:600, easing:'easeOutQuart' },
-        scales: { x:{ stacked:true, grid:{display:false}, ticks:{font:{family:"'JetBrains Mono', monospace", size:10.5}} }, y:{ stacked:true, beginAtZero:true, ticks:{precision:0} } },
-        plugins: { legend:{ position:'bottom', labels:{ boxWidth:9, font:{size:11} } }, tooltip: tooltipStyle }
-      }
-    });
-
-    // chart by channel
-    const chMap = {};
-    data.forEach(r=>{ const c = r.channel||'(ไม่ระบุ)'; chMap[c] = (chMap[c]||0)+1; });
-    const chKeys = Object.keys(chMap).sort((a,b)=> chMap[b]-chMap[a]);
-    if(chartByChannel) chartByChannel.destroy();
-    chartByChannel = new Chart(document.getElementById('chartByChannel'), {
-      type:'bar',
-      data: { labels: chKeys, datasets: [{ data: chKeys.map(k=>chMap[k]), backgroundColor:'#3B6EA5', hoverBackgroundColor:'#2E5A8C', borderRadius:6, borderSkipped:false, maxBarThickness:28 }] },
-      options: {
-        indexAxis:'y', responsive:true, maintainAspectRatio:false,
-        animation: { duration:600, easing:'easeOutQuart' },
-        scales: { x:{ beginAtZero:true, ticks:{precision:0} }, y:{ grid:{display:false}, ticks:{font:{size:11}} } },
-        plugins: { legend:{ display:false }, tooltip: tooltipStyle }
-      }
-    });
+    renderChartByDate(data);
+    renderChartByChannel(data);
 
     // follow-up list
     const followups = data.filter(r=> r.status!=='Pass' || r.note).sort((a,b)=> a.date<b.date?1:-1);
