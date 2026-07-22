@@ -1,0 +1,36 @@
+name: Daily Firestore backup
+
+on:
+  schedule:
+    - cron: '0 18 * * *' # 01:00 Asia/Bangkok
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  backup:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Export Firestore to JSON
+        run: npm run backup
+        env:
+          FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+      - name: Store encrypted-at-rest GitHub artifact for 30 days
+        uses: actions/upload-artifact@v4
+        with:
+          name: reportmanager-backup-${{ github.run_id }}
+          path: backup/*.json
+          retention-days: 30
+          if-no-files-found: error
+      - name: Purge data older than 30 days after backup upload succeeds
+        run: npm run cleanup
+        env:
+          FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
