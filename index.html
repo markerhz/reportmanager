@@ -266,6 +266,8 @@
   .icon-btn{ width:28px; height:28px; border-radius:6px; border:1px solid var(--border); background:var(--surface); cursor:pointer; display:flex; align-items:center; justify-content:center; color:var(--ink-soft); }
   .icon-btn:hover{ background:var(--surface-2); color:var(--navy); }
   .icon-btn.del:hover{ color:var(--fix); border-color:var(--fix); }
+  .safety-note{ background:var(--pass-bg); color:var(--pass); border:1px solid color-mix(in srgb, var(--pass) 25%, transparent); border-radius:9px; padding:10px 13px; font-size:12px; margin-bottom:14px; }
+  .trash-meta{ font-size:11px; color:var(--ink-faint); line-height:1.5; }
 
   .table-scroll{ overflow-x:auto; }
 
@@ -409,6 +411,7 @@
     <button class="tab-btn side-tab-btn active" data-view="dashboard"><span>📊</span> Dashboard</button>
     <button class="tab-btn side-tab-btn" data-view="entry"><span>📝</span> บันทึกข้อมูล</button>
     <button class="tab-btn side-tab-btn" data-view="report"><span>📄</span> รายงานทั้งหมด</button>
+    <button class="tab-btn side-tab-btn" data-view="trash"><span>🗑</span> ถังขยะ</button>
     <button class="tab-btn side-tab-btn" data-view="manual"><span>📖</span> วิธีใช้</button>
   </nav>
 
@@ -618,6 +621,22 @@
         <div class="empty-title">ยังไม่มีข้อมูล</div>
         เริ่มเพิ่มรายการด้านบน หรือวางข้อมูลจาก Excel
       </div>
+    </div>
+  </section>
+
+  <!-- ============ TRASH ============ -->
+  <section class="view" id="view-trash">
+    <h2 class="section-title">ถังขยะ</h2>
+    <p class="section-sub">กู้คืนรายการที่ลบได้ภายใน 30 วัน ผู้ใช้ไม่สามารถลบถาวรก่อนกำหนดได้</p>
+    <div class="safety-note">✓ ระบบจะเก็บรายการไว้ 30 วัน และลบถาวรเฉพาะหลังงานสำรองข้อมูลประจำวันสำเร็จ</div>
+    <div class="card">
+      <div class="table-scroll">
+        <table class="data-table">
+          <thead><tr><th>Date</th><th>Name</th><th>Feed name</th><th>ลบเมื่อ</th><th>ลบโดย</th><th></th></tr></thead>
+          <tbody id="trashTableBody"></tbody>
+        </table>
+      </div>
+      <div class="empty-note" id="trashEmptyNote">ถังขยะว่าง</div>
     </div>
   </section>
 
@@ -945,6 +964,8 @@
       document.getElementById('loginPassword').value = '';
       if(unsubscribeSnapshot){ unsubscribeSnapshot(); unsubscribeSnapshot = null; }
       records = [];
+      allRecords = [];
+      trashRecords = [];
       firstSnapshotReceived = false;
       showSkeletons();
     }
@@ -953,7 +974,9 @@
   function startListening(){
     if(unsubscribeSnapshot) unsubscribeSnapshot();
     unsubscribeSnapshot = db.collection('feeds').onSnapshot(snapshot=>{
-      records = snapshot.docs.map(d=> ({ id: d.id, ...d.data() }));
+      allRecords = snapshot.docs.map(d=> ({ id: d.id, ...d.data() }));
+      records = allRecords.filter(r=>!r.isDeleted);
+      trashRecords = allRecords.filter(r=>r.isDeleted);
       if(!weekAnchorAutoSet && records.length){
         const latestDate = records.map(r=>r.date).filter(Boolean).sort().pop();
         if(latestDate){ weekAnchor = startOfWeek(parseISO(latestDate)); }
@@ -967,6 +990,7 @@
       if(!firstSnapshotReceived){ firstSnapshotReceived = true; hideSkeletons(); }
       refreshChannelList();
       renderTable();
+      renderTrash();
       updateTicker();
       if(typeof Chart !== 'undefined') updateDashboard();
     }, err=>{
@@ -976,6 +1000,8 @@
   }
 
   let records = [];
+  let allRecords = [];
+  let trashRecords = [];
   let editingId = null;
   let selectedIds = new Set();
   let currentPeriod = 'week';
@@ -1059,6 +1085,7 @@
       document.getElementById('view-'+btn.dataset.view).classList.add('active');
       if(btn.dataset.view==='dashboard') updateDashboard();
       if(btn.dataset.view==='report') renderReport();
+      if(btn.dataset.view==='trash') renderTrash();
     });
   });
 
@@ -1071,6 +1098,66 @@
   }
 
   function escapeHtml(s){ return (s||'').toString().replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+
+  function recordSnapshot(record){
+    const copy = {...record};
+    delete copy.id;
+    return copy;
+  }
+
+  async function saveHistory(record, reason){
+    if(!record) return;
+    await db.collection('feeds').doc(record.id).collection('history').add({
+      data: recordSnapshot(record),
+      reason,
+      savedAt: new Date().toISOString(),
+      savedBy: auth.currentUser ? auth.currentUser.email : ''
+    });
+  }
+
+  async function moveToTrash(id){
+    const record = allRecords.find(r=>r.id===id);
+    if(!record || record.isDeleted) return;
+    const now = new Date().toISOString();
+    await saveHistory(record, 'before-delete');
+    await db.collection('feeds').doc(id).update({
+      isDeleted:true, deletedAt:now,
+      deletedBy:auth.currentUser ? auth.currentUser.email : '',
+      updatedAt:now, updatedBy:auth.currentUser ? auth.currentUser.email : ''
+    });
+  }
+
+  async function restoreFromTrash(id){
+    const record = trashRecords.find(r=>r.id===id);
+    if(!record) return;
+    await saveHistory(record, 'before-trash-restore');
+    await db.collection('feeds').doc(id).update({
+      isDeleted:false,
+      deletedAt:firebase.firestore.FieldValue.delete(),
+      deletedBy:firebase.firestore.FieldValue.delete(),
+      updatedAt:new Date().toISOString(),
+      updatedBy:auth.currentUser ? auth.currentUser.email : ''
+    });
+  }
+
+  async function showHistory(id){
+    try{
+      const snap = await db.collection('feeds').doc(id).collection('history').orderBy('savedAt','desc').limit(30).get();
+      if(snap.empty){ alert('รายการนี้ยังไม่มีประวัติการแก้ไข'); return; }
+      const versions = snap.docs.map(d=>({id:d.id,...d.data()}));
+      const lines = versions.map((v,i)=>`${i+1}. ${new Date(v.savedAt).toLocaleString('th-TH')} · ${v.savedBy||'ไม่ทราบผู้ใช้'} · ${v.reason||'edit'}`);
+      const choice = prompt(`ประวัติย้อนหลัง (สูงสุด 30 รายการ)\n\n${lines.join('\n')}\n\nพิมพ์หมายเลขเวอร์ชันที่ต้องการกู้คืน หรือกดยกเลิก`);
+      if(choice===null) return;
+      const version = versions[Number(choice)-1];
+      if(!version){ alert('หมายเลขเวอร์ชันไม่ถูกต้อง'); return; }
+      const current = allRecords.find(r=>r.id===id);
+      if(!current || !confirm('ยืนยันย้อนกลับไปยังเวอร์ชันที่เลือก? เวอร์ชันปัจจุบันจะถูกเก็บไว้ก่อน')) return;
+      await saveHistory(current, 'before-version-restore');
+      const restored = {...version.data, isDeleted:false, updatedAt:new Date().toISOString(), updatedBy:auth.currentUser ? auth.currentUser.email : ''};
+      delete restored.deletedAt; delete restored.deletedBy;
+      await db.collection('feeds').doc(id).set(restored, {merge:false});
+    }catch(e){ alert('เปิดหรือกู้คืนประวัติไม่สำเร็จ: '+e.message); }
+  }
 
   // ---------- news ticker (this week's non-Pass items) ----------
   function updateTicker(){
@@ -1117,10 +1204,11 @@
     saveRowBtn.disabled = true;
     try{
       if(editingId){
+        await saveHistory(records.find(r=>r.id===editingId), 'before-edit');
         await db.collection('feeds').doc(editingId).update(data);
         exitEditMode();
       } else {
-        await db.collection('feeds').add(data);
+        await db.collection('feeds').add({...data, isDeleted:false, createdAt:data.updatedAt, createdBy:data.updatedBy});
         resetForm();
       }
     }catch(e){
@@ -1193,6 +1281,7 @@
         <td>
           <div class="row-actions">
             <button class="icon-btn edit" data-id="${r.id}" title="แก้ไข">✎</button>
+            <button class="icon-btn history" data-id="${r.id}" title="ประวัติและย้อนกลับ">↶</button>
             <button class="icon-btn del" data-id="${r.id}" title="ลบ">🗑</button>
           </div>
         </td>
@@ -1200,10 +1289,11 @@
     `).join('');
 
     tableBody.querySelectorAll('.edit').forEach(b=> b.addEventListener('click', ()=> startEdit(b.dataset.id)));
+    tableBody.querySelectorAll('.history').forEach(b=> b.addEventListener('click', ()=> showHistory(b.dataset.id)));
     tableBody.querySelectorAll('.del').forEach(b=> b.addEventListener('click', async ()=>{
-      if(confirm('ยืนยันลบรายการนี้?')){
+      if(confirm('ย้ายรายการนี้เข้าถังขยะ 30 วัน?')){
         try{
-          await db.collection('feeds').doc(b.dataset.id).delete();
+          await moveToTrash(b.dataset.id);
           selectedIds.delete(b.dataset.id);
         }catch(e){ alert('ลบไม่สำเร็จ: ' + e.message); }
       }
@@ -1227,17 +1317,33 @@
   });
   deleteSelectedBtn.addEventListener('click', async ()=>{
     if(!selectedIds.size) return;
-    if(confirm(`ยืนยันลบ ${selectedIds.size} รายการที่เลือก?`)){
+    if(confirm(`ย้าย ${selectedIds.size} รายการที่เลือกเข้าถังขยะ 30 วัน?`)){
       try{
-        const batch = db.batch();
-        selectedIds.forEach(id=> batch.delete(db.collection('feeds').doc(id)));
-        await batch.commit();
+        for(const id of selectedIds) await moveToTrash(id);
         selectedIds.clear();
       }catch(e){
         alert('ลบไม่สำเร็จ: ' + e.message);
       }
     }
   });
+
+  function renderTrash(){
+    const body = document.getElementById('trashTableBody');
+    const empty = document.getElementById('trashEmptyNote');
+    if(!body || !empty) return;
+    const rows = trashRecords.slice().sort((a,b)=>(b.deletedAt||'').localeCompare(a.deletedAt||''));
+    empty.style.display = rows.length ? 'none' : 'block';
+    body.innerHTML = rows.map(r=>`<tr>
+      <td class="mono">${displayDate(r.date)}</td><td>${escapeHtml(r.name)}</td><td>${escapeHtml(r.feed)}</td>
+      <td class="trash-meta">${r.deletedAt?new Date(r.deletedAt).toLocaleString('th-TH'):'–'}</td>
+      <td class="trash-meta">${escapeHtml(r.deletedBy||'–')}</td>
+      <td><button class="btn sm restore" data-id="${r.id}">↶ กู้คืน</button></td>
+    </tr>`).join('');
+    body.querySelectorAll('.restore').forEach(b=>b.addEventListener('click', async()=>{
+      if(!confirm('กู้คืนรายการนี้กลับไปยังรายการใช้งาน?')) return;
+      try{ await restoreFromTrash(b.dataset.id); }catch(e){ alert('กู้คืนไม่สำเร็จ: '+e.message); }
+    }));
+  }
 
   // ---------- bulk paste modal (column mapping) ----------
   const bulkModal=document.getElementById('bulkModal'), bulkPasteArea=document.getElementById('bulkPasteArea');
@@ -1378,7 +1484,7 @@
       const batch = db.batch();
       chunk.forEach(r=>{
         const ref = db.collection('feeds').doc();
-        batch.set(ref, { date:r.date, name:r.name, feed:r.feed, channel:r.channel, start:r.start, end:r.end, status:r.status, note:r.note, updatedBy:userEmail, updatedAt:nowIso });
+        batch.set(ref, { date:r.date, name:r.name, feed:r.feed, channel:r.channel, start:r.start, end:r.end, status:r.status, note:r.note, isDeleted:false, createdBy:userEmail, createdAt:nowIso, updatedBy:userEmail, updatedAt:nowIso });
       });
       await batch.commit();
     }
