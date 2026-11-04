@@ -1,13 +1,15 @@
 {
-  "name": "reportmanager-safety-jobs",
-  "private": true,
+  "name": "reportmanager",
+  "version": "1.0.0",
   "type": "module",
   "scripts": {
-    "backup": "node scripts/firestore-maintenance.mjs backup",
-    "cleanup": "node scripts/firestore-maintenance.mjs cleanup",
-    "check": "node --check scripts/firestore-maintenance.mjs"
+    "sync": "node scripts/sync-sheets.mjs",
+    "backup": "node scripts/firestore-maintenance.mjs --backup",
+    "cleanup": "node scripts/firestore-maintenance.mjs --cleanup",
+    "check": "node scripts/firestore-maintenance.mjs --check"
   },
   "dependencies": {
-    "firebase-admin": "^13.4.0"
+    "firebase-admin": "^13.4.0",
+    "googleapis": "^144.0.0"
   }
 }
