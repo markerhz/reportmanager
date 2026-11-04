@@ -26,4 +26,5 @@ jobs:
         env:
           SPREADSHEET_ID: ${{ secrets.SPREADSHEET_ID }}
           GCP_SA_KEY: ${{ secrets.GCP_SA_KEY }}
+          FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
         run: node scripts/sync-sheets.mjs
