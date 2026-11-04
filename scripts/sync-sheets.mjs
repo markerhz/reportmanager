@@ -117,7 +117,4 @@ async function run() {
   console.log('Synced ' + saved + ' rows.');
 }
 
-run().catch(err => {
-  console.error('Sync failed:', err);
-  pro});cess.exit(1);
-});ba
+run().catch(err => { console.error(err); process.exit(1); });
