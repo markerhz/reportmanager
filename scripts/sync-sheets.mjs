@@ -62,6 +62,10 @@ function parseCSV(text) {
         field += c;
       }
     }
+    row.push(field);
+    return row;
+  });
+}
   async function run() {
   const sheetId = process.env.SPREADSHEET_ID;
   const host = ['https://docs', 'google', 'com/spreadsheets/d/'].join('.');
