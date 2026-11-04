@@ -1,15 +1,22 @@
 import { google } from 'googleapis';
 import admin from 'firebase-admin';
 
-// 1. อ่านข้อมูล Service Account จาก Environment Variable
-const saKeyJson = process.env.GCP_SA_KEY;
-if (!saKeyJson) {
+// 1. อ่านข้อมูล Service Account จาก Environment Variable (รองรับทั้ง Base64 และ JSON ธรรมดา)
+const rawSaKey = process.env.GCP_SA_KEY;
+if (!rawSaKey) {
   console.error('❌ Missing GCP_SA_KEY environment variable in GitHub Secrets');
   process.exit(1);
 }
+
 let serviceAccount;
 try {
-  serviceAccount = JSON.parse(saKeyJson);
+  const trimmed = rawSaKey.trim();
+  if (trimmed.startsWith('{')) {
+    serviceAccount = JSON.parse(trimmed);
+  } else {
+    const decoded = Buffer.from(trimmed, 'base64').toString('utf-8');
+    serviceAccount = JSON.parse(decoded);
+  }
 } catch (e) {
   console.error('❌ Failed to parse GCP_SA_KEY as JSON:', e.message);
   process.exit(1);
