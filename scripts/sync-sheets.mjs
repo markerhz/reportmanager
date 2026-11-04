@@ -1,7 +1,7 @@
 import admin from 'firebase-admin';
 
 // 1. อ่าน Service Account
-const rawKey = (process.env.GCP_SA_KEY || '').trim();
+const rawKey = (process.env.FIREBASE_SERVICE_ACCOUNT || process.env.GCP_SA_KEY || '').trim();
 let serviceAccount;
 try {
   if (rawKey.startsWith('{')) {
