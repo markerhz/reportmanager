@@ -1,6 +1,6 @@
 import admin from 'firebase-admin';
 
-// 1. อ่านข้อมูล Service Account จาก Environment Variable (รองรับทั้ง Base64 และ JSON ธรรมดา และ auto-repair)
+// 1. อ่านข้อมูล Service Account จาก Environment Variable (รองรับทั้ง Base64 และ JSON ธรรมดา)
 const rawSaKey = process.env.GCP_SA_KEY;
 if (!rawSaKey) {
   console.error('❌ Missing GCP_SA_KEY environment variable in GitHub Secrets');
@@ -14,12 +14,11 @@ try {
     try {
       serviceAccount = JSON.parse(trimmed);
     } catch (e1) {
-      // Auto-repair escaped newlines if any
       const repaired = trimmed.replace(/([\r\n]+)/g, '\\n');
       serviceAccount = JSON.parse(repaired);
     }
   } else {
-    // Base64 decoded
+    // ถอดรหัส Base64
     const decoded = Buffer.from(trimmed, 'base64').toString('utf-8');
     serviceAccount = JSON.parse(decoded);
   }
@@ -38,11 +37,11 @@ if (!admin.apps.length) {
 }
 const db = admin.firestore();
 
-// 3. Helper function ดึงข้อมูลจาก Google Sheet (รองรับทั้ง Direct Export และ Sheets API)
+// 3. Helper function ดึงข้อมูลจาก Google Sheet (ดึงตรงแบบ Dual-Engine)
 async function fetchSheetData(spreadsheetId) {
   console.log(`📡 Fetching data from Google Spreadsheet: ${spreadsheetId}...`);
   
-  // วิธีที่ 1: ดึงผ่าน Direct CSV Export (เร็วที่สุด ไม่ต้องเปิด API บน Cloud Console)
+  // วิธีที่ 1: ดึงผ่าน Direct Web Export (เร็วที่สุดและไม่ต้องเปิด API บน Cloud Console)
   try {
     const csvUrl = `https://docs.google.com/spreadsheets/d/${spreadsheetId}/gviz/tq?tqx=out:csv&sheet=Event%20Schedule`;
     console.log(`🌐 Trying direct download from: ${csvUrl}`);
@@ -52,11 +51,11 @@ async function fetchSheetData(spreadsheetId) {
       const rows = parseCSV(csvText);
       if (rows && rows.length > 2) {
         console.log(`✅ Successfully fetched ${rows.length} rows via Direct Export!`);
-        return rows.slice(2); // ข้ามแถว Header
+        return rows.slice(2);
       }
     }
   } catch (err) {
-    console.log(`⚠️ Direct download fallback to API: ${err.message}`);
+    console.log(`⚠️ Direct download fallback: ${err.message}`);
   }
 
   // วิธีที่ 2: ดึงผ่าน Google Sheets API
@@ -80,7 +79,7 @@ async function fetchSheetData(spreadsheetId) {
   }
 }
 
-// Simple CSV Parser for quotes and commas
+// Simple CSV Parser
 function parseCSV(text) {
   const lines = text.split(/\r?\n/);
   const rows = [];
@@ -126,62 +125,4 @@ async function syncEventSchedule() {
   let syncedCount = 0;
 
   for (const row of rows) {
-    // โครงสร้างคอลัมน์ Event Schedule:
-    // col 2: Date (C), col 3: Start Time (D), col 4: End Time (E), col 5: Game Name (F), col 6: League (G), col 7: Channel (H), col 10: Assign (K)
-    const date = row[2];
-    const start = row[3];
-    const end = row[4];
-    const gameName = row[5];
-    const league = row[6];
-    const channel = row[7];
-    const assign = row[10];
-    
-    // ข้ามแถวที่ไม่มีข้อมูลวันที่หรือยังไม่ได้มอบหมายงาน (Assign)
-    if (!date || !assign || assign.trim() === '') continue;
-
-    // สร้าง ID เอกสารเฉพาะตัว ป้องกันข้อมูลซ้ำ (Unique per date + channel + start)
-    const rawId = `${date}_${channel || 'CH'}_${start || '00'}`;
-    const docId = rawId.replace(/[^a-zA-Z0-9_-]/g, '_');
-    const docRef = db.collection('feeds').doc(docId);
-
-    // แยกรายชื่อวิศวกรกรณีที่มีหลายคนคั่นด้วย comma
-    const assignees = assign.split(',').map(s => s.trim()).filter(Boolean);
-
-    batch.set(docRef, {
-      date: date.trim(),
-      start: start ? start.trim() : '',
-      end: end ? end.trim() : '',
-      feed: gameName ? gameName.trim() : '',
-      name: league ? league.trim() : '',
-      channel: channel ? channel.trim() : '',
-      assign: assign.trim(),
-      assignedEngineers: assignees,
-      status: 'Pass',
-      isDeleted: false,
-      updatedAt: new Date().toISOString(),
-      updatedBy: 'github-actions-sync'
-    }, { merge: true });
-
-    operationCount++;
-    syncedCount++;
-
-    // Firestore batch จำกัดสูงสุด 500 operations ต่อ 1 batch
-    if (operationCount >= 450) {
-      await batch.commit();
-      batch = db.batch();
-      operationCount = 0;
-      console.log(`💾 Committed 450 records batch...`);
-    }
-  }
-
-  if (operationCount > 0) {
-    await batch.commit();
-  }
-
-  console.log(`🎉 Sync completed successfully! Total ${syncedCount} assigned feeds saved to Firestore.`);
-}
-
-syncEventSchedule().catch(err => {
-  console.error('❌ Sync script execution failed:', err);
-  process.exit(1);
-});
+    // col 2: Date, col 3: Start, col 4: End, col 5: Game Name, col 6: League
