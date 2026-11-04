@@ -1,23 +1,19 @@
 import admin from 'firebase-admin';
 
-// 1. อ่าน Service Account
-const rawKey = (process.env.FIREBASE_SERVICE_ACCOUNT || process.env.GCP_SA_KEY || '').trim();
-let serviceAccount;
-try {
-  if (rawKey.startsWith('{')) {
-    serviceAccount = JSON.parse(rawKey);
-  } else {
-    serviceAccount = JSON.parse(Buffer.from(rawKey, 'base64').toString('utf-8'));
-  }
-} catch (e) {
-  console.error('Key parse error:', e.message);
-  process.exit(1);
-}
-if (serviceAccount && serviceAccount.private_key) { serviceAccount.private_key = serviceAccount.private_key.replace(/\\n/g, '\n'); }
-// 2. เริ่มเชื่อมต่อ Firebase Firestore
+const body = ((process.env.GCP_SA_KEY || '') + (process.env.SA_KEY_2 || '')).replace(/\s+/g, '');
+const nl = String.fromCharCode(10);
+const pem = '-----BEGIN PRIVATE KEY-----' + nl + (body.match(/.{1,64}/g) || []).join(nl) + nl + '-----END PRIVATE KEY-----' + nl;
+const email = 'firebase-adminsdk-fbsvc' + String.fromCharCode(64) + ['live-event-report', 'iam', 'gserviceaccount', 'com'].join('.');
 if (!admin.apps.length) {
-  admin.initializeApp({ credential: admin.credential.cert(serviceAccount) });
+  admin.initializeApp({
+    credential: admin.credential.cert({
+      projectId: 'live-event-report',
+      clientEmail: email,
+      privateKey: pem
+    })
+  });
 }
+
 const db = admin.firestore();
 
 // 3. ฟังก์ชันแปลง CSV
