@@ -80,3 +80,13 @@ async function run() {
       batch = db.batch();
       count = 0;
     }
+  }
+
+  if (count > 0) {
+    await batch.commit();
+  }
+
+  console.log(`Synced ${saved} rows.`);
+}
+
+run().catch(console.error);
