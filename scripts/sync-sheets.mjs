@@ -13,7 +13,7 @@ try {
   console.error('Key parse error:', e.message);
   process.exit(1);
 }
-
+if (serviceAccount && serviceAccount.private_key) { serviceAccount.private_key = serviceAccount.private_key.replace(/\\n/g, '\n'); }
 // 2. เริ่มเชื่อมต่อ Firebase Firestore
 if (!admin.apps.length) {
   admin.initializeApp({ credential: admin.credential.cert(serviceAccount) });
