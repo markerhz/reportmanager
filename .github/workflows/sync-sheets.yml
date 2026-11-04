@@ -1,0 +1,29 @@
+name: Sync Google Sheets to Firestore
+
+on:
+  schedule:
+    # รันอัตโนมัติทุกชั่วโมง ที่นาทีที่ 0 (UTC)
+    - cron: '0 * * * *'
+  # รองรับการกดปุ่ม Run workflow ด้วยตัวเองจากหน้า GitHub Actions
+  workflow_dispatch:
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install Dependencies
+        run: npm install
+
+      - name: Run Sync Script
+        env:
+          SPREADSHEET_ID: ${{ secrets.SPREADSHEET_ID }}
+          GCP_SA_KEY: ${{ secrets.GCP_SA_KEY }}
+        run: node scripts/sync-sheets.mjs
