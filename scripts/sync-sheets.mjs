@@ -62,27 +62,37 @@ function parseCSV(text) {
         field += c;
       }
     }
-    row.push(field);
-    return row;
-  });
-}
-
-async function run() {
+  async function run() {
   const sheetId = process.env.SPREADSHEET_ID;
   const host = ['https://docs', 'google', 'com/spreadsheets/d/'].join('.');
-  const url = host + sheetId + '/gviz/tq?tqx=out:csv&sheet=Event%20Schedule';
+  const url = host + sheetId + '/export?format=csv&gid=949359939';
   console.log('Fetching sheet...');
   const res = await fetch(url);
   const text = await res.text();
   const allRows = parseCSV(text);
   console.log('Total CSV rows parsed:', allRows.length);
-  const rows = allRows.slice(1);
+
+  const hRow = allRows.find(r => r.some(c => c && c.trim() === 'Assign')) || [];
+  const dIdx = hRow.findIndex(c => c && c.trim() === 'Date');
+  const sIdx = hRow.findIndex(c => c && c.trim() === 'Start Time');
+  const eIdx = hRow.findIndex(c => c && c.trim() === 'End Time');
+  const gIdx = hRow.findIndex(c => c && c.trim() === 'Game Name');
+  const lIdx = hRow.findIndex(c => c && c.trim().startsWith('League'));
+  const cIdx = hRow.findIndex(c => c && c.trim() === 'Channel');
+  const aIdx = hRow.findIndex(c => c && c.trim() === 'Assign');
+  console.log('Column indices:', { dIdx, sIdx, eIdx, gIdx, lIdx, cIdx, aIdx });
 
   let batch = db.batch(), count = 0, saved = 0;
-  for (let idx = 0; idx < rows.length; idx++) {
-    const r = rows[idx];
-    const [id, day, rawDate, start, end, game, league, ch, media, notes, assign] = r;
-    if (!rawDate || !assign || !assign.trim() || rawDate === 'Date') continue;
+  for (let idx = 0; idx < allRows.length; idx++) {
+    const r = allRows[idx];
+    const rawDate = r[dIdx >= 0 ? dIdx : 2];
+    const start = r[sIdx >= 0 ? sIdx : 3];
+    const end = r[eIdx >= 0 ? eIdx : 4];
+    const game = r[gIdx >= 0 ? gIdx : 5];
+    const league = r[lIdx >= 0 ? lIdx : 6];
+    const ch = r[cIdx >= 0 ? cIdx : 7];
+    const assign = r[aIdx >= 0 ? aIdx : 10];
+    if (!rawDate || !assign || !assign.trim() || rawDate.trim() === 'Date') continue;
 
     const date = toIsoDate(rawDate);
     const rawId = 'sheet_' + idx + '_' + date;
@@ -100,7 +110,6 @@ async function run() {
       assign: assign.trim(),
       assignedEngineers: assignees,
       status: 'Pass',
-      note: (notes || '').trim(),
       isDeleted: false,
       updatedAt: new Date().toISOString()
     }, { merge: true });
@@ -117,4 +126,7 @@ async function run() {
   console.log('Synced ' + saved + ' rows.');
 }
 
-run().catch(err => { console.error(err); process.exit(1); });
+run().catch(err => {
+  console.error('Sync failed:', err);
+  process.exit(1);
+}); 
