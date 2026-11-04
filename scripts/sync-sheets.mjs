@@ -69,22 +69,21 @@ function parseCSV(text) {
   async function run() {
   const sheetId = process.env.SPREADSHEET_ID;
   const host = ['https://docs', 'google', 'com/spreadsheets/d/'].join('.');
-  const url = host + sheetId + '/export?format=csv&gid=949359939';
+  const url = host + sheetId + '/gviz/tq?tqx=out:csv&sheet=Event%20Schedule&range=A2:L5000';
   console.log('Fetching sheet...');
   const res = await fetch(url);
   const text = await res.text();
   const allRows = parseCSV(text);
   console.log('Total CSV rows parsed:', allRows.length);
 
-  const hRow = allRows.find(r => r.some(c => c && c.trim() === 'Assign')) || [];
-  const dIdx = hRow.findIndex(c => c && c.trim() === 'Date');
-  const sIdx = hRow.findIndex(c => c && c.trim() === 'Start Time');
-  const eIdx = hRow.findIndex(c => c && c.trim() === 'End Time');
-  const gIdx = hRow.findIndex(c => c && c.trim() === 'Game Name');
-  const lIdx = hRow.findIndex(c => c && c.trim().startsWith('League'));
-  const cIdx = hRow.findIndex(c => c && c.trim() === 'Channel');
-  const aIdx = hRow.findIndex(c => c && c.trim() === 'Assign');
-  console.log('Column indices:', { dIdx, sIdx, eIdx, gIdx, lIdx, cIdx, aIdx });
+    const hRow = allRows.find(r => r.some(c => c && c.includes('Assign'))) || allRows[0] || [];
+    const dIdx = hRow.findIndex(c => c && c.includes('Date') && !c.includes('Key'));
+    const sIdx = hRow.findIndex(c => c && c.includes('Start Time'));
+    const eIdx = hRow.findIndex(c => c && c.includes('End Time'));
+    const gIdx = hRow.findIndex(c => c && c.includes('Game Name'));
+    const lIdx = hRow.findIndex(c => c && c.includes('League'));
+    const cIdx = hRow.findIndex(c => c && c.includes('Channel'));
+    const aIdx = hRow.findIndex(c => c && c.includes('Assign'));  
 
   let batch = db.batch(), count = 0, saved = 0;
   for (let idx = 0; idx < allRows.length; idx++) {
