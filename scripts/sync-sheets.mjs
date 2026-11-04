@@ -1,4 +1,4 @@
-eiport admin from 'firebase-admin';
+iport admin from 'firebase-admin';
 
 const nl = String.fromCharCode(10);
 const cr = String.fromCharCode(13);
