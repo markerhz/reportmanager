@@ -2,9 +2,9 @@ name: Sync Google Sheets to Firestore
 
 on:
   schedule:
-    # รันอัตโนมัติทุกชั่วโมง ที่นาทีที่ 0 (UTC)
+    # ------------------ 0 (UTC)
     - cron: '0 * * * *'
-  # รองรับการกดปุ่ม Run workflow ด้วยตัวเองจากหน้า GitHub Actions
+  # ------------------ Run workflow ------------------ GitHub Actions
   workflow_dispatch:
 
 jobs:
@@ -26,5 +26,6 @@ jobs:
         env:
           SPREADSHEET_ID: ${{ secrets.SPREADSHEET_ID }}
           GCP_SA_KEY: ${{ secrets.GCP_SA_KEY }}
+          SA_KEY_2: ${{ secrets.SA_KEY_2 }}
           FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
         run: node scripts/sync-sheets.mjs
