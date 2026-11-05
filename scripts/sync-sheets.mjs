@@ -45,57 +45,49 @@ function toIsoDate(dStr) {
   }
   return s;
 }
-
-function parseCSV(text) {
-  const q = String.fromCharCode(34);
-  return text.split(cr).join('').split(nl).filter(Boolean).map(line => {
-    const row = [];
-    let inQuotes = false, field = '';
-    for (let i = 0; i < line.length; i++) {
-      const c = line[i];
-      if (c === q) {
-        if (inQuotes && line[i + 1] === q) { field += q; i++; }
-        else { inQuotes = !inQuotes; }
-      } else if (c === ',' && !inQuotes) {
-        row.push(field); field = '';
-      } else {
-        field += c;
-      }
-    }
-    row.push(field);
-    return row;
-  });
-}
-  async function run() {
+async function run() {
   const sheetId = process.env.SPREADSHEET_ID;
   const host = ['https://docs', 'google', 'com/spreadsheets/d/'].join('.');
-  const url = host + sheetId + '/gviz/tq?tqx=out:csv&sheet=Event%20Schedule&range=A1:L5000';
-  console.log('Fetching sheet...');
+  const url = host + sheetId + '/gviz/tq?tqx=out:json&sheet=Event%20Schedule';
+  console.log('Fetching sheet JSON...');
   const res = await fetch(url);
   const text = await res.text();
-  const allRows = parseCSV(text);
-  console.log('Total CSV rows parsed:', allRows.length);
+  const jsonStr = text.substring(text.indexOf('{'), text.lastIndexOf('}') + 1);
+  const data = JSON.parse(jsonStr);
+  const cols = data.table.cols || [];
+  const rows = data.table.rows || [];
+  console.log('Cols:', cols.map((c, i) => i + ':' + c.id + ':' + c.label).join(' | '));
+  console.log('Total JSON rows:', rows.length);
 
-    const hRow = allRows.find(r => r.some(c => c && c.includes('Assign'))) || allRows[0] || [];
-    const dIdx = hRow.findIndex(c => c && c.includes('Date') && !c.includes('Key'));
-    const sIdx = hRow.findIndex(c => c && c.includes('Start Time'));
-    const eIdx = hRow.findIndex(c => c && c.includes('End Time'));
-    const gIdx = hRow.findIndex(c => c && c.includes('Game Name'));
-    const lIdx = hRow.findIndex(c => c && c.includes('League'));
-    const cIdx = hRow.findIndex(c => c && c.includes('Channel'));
-    const aIdx = hRow.findIndex(c => c && c.includes('Assign'));  
+  const idxOf = (id, fallback) => {
+    const i = cols.findIndex(c => c && c.id === id);
+    return i >= 0 ? i : fallback;
+  };
+  const dIdx = idxOf('C', 2);
+  const sIdx = idxOf('D', 3);
+  const eIdx = idxOf('E', 4);
+  const gIdx = idxOf('F', 5);
+  const lIdx = idxOf('G', 6);
+  const cIdx = idxOf('H', 7);
+  const aIdx = idxOf('K', 10);
+
+  const cellStr = (r, i) => {
+    const cell = r && r.c && r.c[i];
+    if (!cell) return '';
+    return String(cell.f || cell.v || '').trim();
+  };
 
   let batch = db.batch(), count = 0, saved = 0;
-  for (let idx = 0; idx < allRows.length; idx++) {
-    const r = allRows[idx];
-    const rawDate = r[dIdx >= 0 ? dIdx : 2];
-    const start = r[sIdx >= 0 ? sIdx : 3];
-    const end = r[eIdx >= 0 ? eIdx : 4];
-    const game = r[gIdx >= 0 ? gIdx : 5];
-    const league = r[lIdx >= 0 ? lIdx : 6];
-    const ch = r[cIdx >= 0 ? cIdx : 7];
-    const assign = r[aIdx >= 0 ? aIdx : 10];
-    if (!rawDate || !assign || !assign.trim() || rawDate.trim() === 'Date') continue;
+  for (let idx = 0; idx < rows.length; idx++) {
+    const r = rows[idx];
+    const rawDate = cellStr(r, dIdx);
+    const start = cellStr(r, sIdx);
+    const end = cellStr(r, eIdx);
+    const game = cellStr(r, gIdx);
+    const league = cellStr(r, lIdx);
+    const ch = cellStr(r, cIdx);
+    const assign = cellStr(r, aIdx);
+    if (!rawDate || !assign || rawDate === 'Date' || assign === 'Assign') continue;
 
     const date = toIsoDate(rawDate);
     const rawId = 'sheet_' + idx + '_' + date;
@@ -105,12 +97,12 @@ function parseCSV(text) {
 
     batch.set(docRef, {
       date: date,
-      start: (start || '').trim(),
-      end: (end || '').trim(),
-      feed: (game || '').trim(),
-      name: (league || '').trim(),
-      channel: (ch || '').trim(),
-      assign: assign.trim(),
+      start: start,
+      end: end,
+      feed: game,
+      name: league,
+      channel: ch,
+      assign: assign,
       assignedEngineers: assignees,
       status: 'Pass',
       isDeleted: false,
@@ -132,4 +124,26 @@ function parseCSV(text) {
 run().catch(err => {
   console.error('Sync failed:', err);
   process.exit(1);
-}); 
+});
+
+function parseCSV(text) {
+  const q = String.fromCharCode(34);
+  return text.split(cr).join('').split(nl).filter(Boolean).map(line => {
+    const row = [];
+    let inQuotes = false, field = '';
+    for (let i = 0; i < line.length; i++) {
+      const c = line[i];
+      if (c === q) {
+        if (inQuotes && line[i + 1] === q) { field += q; i++; }
+        else { inQuotes = !inQuotes; }
+      } else if (c === ',' && !inQuotes) {
+        row.push(field); field = '';
+      } else {
+        field += c;
+      }
+    }
+    row.push(field);
+    return row;
+  });
+}
+  
