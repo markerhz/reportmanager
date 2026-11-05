@@ -58,7 +58,9 @@ async function run() {
   const rows = data.table.rows || [];
   console.log('Cols:', cols.map((c, i) => i + ':' + c.id + ':' + c.label).join(' | '));
   console.log('Total JSON rows:', rows.length);
-
+  console.log('Row 0:', JSON.stringify(rows[0]));
+    console.log('Row 10:', JSON.stringify(rows[10]));
+    console.log('Non-empty K count:', rows.filter(r => r && r.c && r.c[10] && (r.c[10].v || r.c[10].f)).length);
   const idxOf = (id, fallback) => {
     const i = cols.findIndex(c => c && c.id === id);
     return i >= 0 ? i : fallback;
