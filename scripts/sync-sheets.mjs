@@ -69,7 +69,7 @@ function parseCSV(text) {
   async function run() {
   const sheetId = process.env.SPREADSHEET_ID;
   const host = ['https://docs', 'google', 'com/spreadsheets/d/'].join('.');
-  const url = host + sheetId + '/gviz/tq?tqx=out:csv&sheet=Event%20Schedule&range=A2:L5000';
+  const url = host + sheetId + '/gviz/tq?tqx=out:csv&sheet=Event%20Schedule&range=A1:L5000';
   console.log('Fetching sheet...');
   const res = await fetch(url);
   const text = await res.text();
