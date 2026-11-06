@@ -409,6 +409,7 @@
 
   <nav class="side-nav">
     <button class="tab-btn side-tab-btn active" data-view="dashboard"><span>📊</span> Dashboard</button>
+<button class="tab-btn side-tab-btn" data-view="workload">⏱️ ชั่วโมงทำงานวิศวกร</button>
     <button class="tab-btn side-tab-btn" data-view="entry"><span>📝</span> บันทึกข้อมูล</button>
     <button class="tab-btn side-tab-btn" data-view="report"><span>📄</span> รายงานทั้งหมด</button>
     <button class="tab-btn side-tab-btn" data-view="trash"><span>🗑</span> ถังขยะ</button>
@@ -561,6 +562,7 @@
         <button class="btn primary" id="saveRowBtn">＋ เพิ่มรายการ</button>
         <button class="btn ghost" id="cancelEditBtn" style="display:none;">ยกเลิกการแก้ไข</button>
         <button class="btn" id="openBulkBtn" style="margin-left:auto;">📋 วางข้อมูลจาก Excel</button>
+            <button class="btn primary" id="syncAllSportsBtn" type="button" onclick="window.syncAllSportsData && window.syncAllSportsData()">🔄 ดึงข้อมูลกีฬาทั้งหมด</button>
       </div>
     </div>
 
