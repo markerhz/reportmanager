@@ -300,6 +300,9 @@ body {
   padding: 4px 10px; border-radius: 99px;
   background: var(--pass-bg); color: var(--pass);
 }
+.sync-pill.empty {
+  background: var(--wait-bg); color: var(--wait);
+}
 .topbar-actions { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
 .btn {
   display: inline-flex; align-items: center; justify-content: center; gap: 6px;
@@ -315,6 +318,7 @@ body {
   transition: all 0.15s ease;
 }
 .btn:hover { background: var(--surface-2); box-shadow: var(--shadow); }
+.btn:disabled { opacity: 0.55; cursor: not-allowed; }
 .btn.sm { padding: 6px 11px; font-size: 12px; }
 .btn.primary { background: var(--navy); color: #fff; border-color: var(--navy); }
 .btn.primary:hover { background: var(--blue); border-color: var(--blue); }
@@ -325,7 +329,8 @@ body {
   box-shadow: 0 2px 10px rgba(59,110,165,0.28);
 }
 .btn.sync-btn:hover { filter: brightness(1.08); }
-.btn.danger { background: var(--fix-bg); color: var(--fix); border-color: transparent; }
+.btn.danger { background: var(--fix-bg); color: var(--fix); border-color: rgba(217,105,95,0.3); }
+.btn.danger:hover { background: var(--fix); color: #fff; }
 .btn.ghost { background: transparent; border-color: transparent; color: var(--ink-soft); }
 .icon-btn {
   width: 34px; height: 34px; border-radius: 10px;
@@ -554,7 +559,28 @@ input:focus, select:focus, textarea:focus { outline: 2px solid var(--blue); bord
       <button type="button" class="btn primary" id="loginBtn" style="width:100%; justify-content:center; padding:10px;">🔐 เข้าสู่ระบบ (Sign In)</button>
       <div class="login-error" id="loginError" style="display:none;"></div>
       <div class="login-divider">หรือใช้งานฐานข้อมูลในเครื่อง</div>
-      <button type="button" class="btn sm" id="guestContinueBtn" style="width:100%; justify-content:center;">⚡ เข้าใช้งานโหมด Offline / Preview (1,210 รายการ)</button>
+      <button type="button" class="btn sm" id="guestContinueBtn" style="width:100%; justify-content:center;">⚡ เข้าใช้งานโหมด Offline / Preview</button>
+    </div>
+  </div>
+
+  <!-- =========================================================
+       CLEAR FIREBASE DATABASE CONFIRMATION MODAL
+  ========================================================== -->
+  <div id="clearDbModal" style="display:none; position:fixed; inset:0; background:rgba(11,20,32,0.68); z-index:350; align-items:center; justify-content:center; padding:16px;">
+    <div class="card" style="max-width:480px; width:100%; display:flex; flex-direction:column; gap:14px;">
+      <div style="display:flex; align-items:center; justify-content:space-between;">
+        <div class="card-title" style="color:var(--fix); font-size:16px;">🗑️ ยืนยันการลบฐานข้อมูลใน Firebase ทั้งหมด</div>
+        <button type="button" id="closeClearDbModalBtn" class="btn sm ghost">✕</button>
+      </div>
+      <div style="font-size:13px; line-height:1.65; color:var(--ink-soft);">
+        ระบบจะทำการลบข้อมูลทั้งหมดใน <strong>Firebase Firestore</strong> (ทั้งคอลเลกชัน <code>feeds</code> และ <code>reports</code>) รวมถึงล้าง Cache ในเครื่องให้เป็น <strong>0 รายการ (ว่างเปล่า)</strong> ทันที<br><br>
+        หลังจากลบเสร็จแล้ว คุณสามารถกดปุ่ม <strong>🔄 ดึงข้อมูลกีฬาทั้งหมด (Google Sheet)</strong> เพื่อดึงข้อมูลทั้ง 1,210 รายการจากชีตตัวจริงบันทึกกลับเข้า Firebase ใหม่ได้ทุกเมื่อ
+      </div>
+      <div id="clearDbProgressBox" style="display:none; padding:10px 12px; border-radius:10px; background:var(--surface-2); border:1px solid var(--border); font-size:12.5px; font-family:var(--mono); color:var(--blue);"></div>
+      <div style="display:flex; justify-content:flex-end; gap:8px;">
+        <button type="button" id="cancelClearDbBtn" class="btn sm ghost">ยกเลิก</button>
+        <button type="button" id="confirmClearDbBtn" class="btn sm danger" style="font-weight:700;">🗑️ ยืนยันลบฐานข้อมูลทั้งหมด</button>
+      </div>
     </div>
   </div>
 
@@ -596,7 +622,7 @@ input:focus, select:focus, textarea:focus { outline: 2px solid var(--blue); bord
       <div class="side-footer">
         <div class="live-chip">
           <span class="tally-dot"></span>
-          <span id="totalChip">1,210 feeds logged</span>
+          <span id="totalChip">0 feeds logged</span>
         </div>
         <div class="user-chip" title="สถานะผู้ใช้งาน">
           👤 <span id="userEmailChip">กำลังตรวจสอบสิทธิ์...</span>
@@ -614,10 +640,13 @@ input:focus, select:focus, textarea:focus { outline: 2px solid var(--blue); bord
       <header class="topbar">
         <div class="topbar-left">
           <div class="topbar-title" id="currentViewTitle">📊 ภาพรวมการถ่ายทอดสด (Broadcast Dashboard)</div>
-          <span class="sync-pill" id="syncStatusBadge">● ฐานข้อมูลจริง (.xlsx) 1,210 รายการ</span>
+          <span class="sync-pill" id="syncStatusBadge">● พร้อมใช้งาน</span>
         </div>
         <div class="topbar-actions">
-          <button type="button" id="syncAllSportsBtn" class="btn sync-btn">
+          <button type="button" id="clearFirebaseDbBtn" class="btn sm danger" title="ลบข้อมูลทั้งหมดใน Firebase Firestore ให้เป็น 0 ก่อนดึงใหม่">
+            🗑️ ลบฐานข้อมูล Firebase
+          </button>
+          <button type="button" id="syncAllSportsBtn" class="btn sync-btn" title="ดึงข้อมูลกีฬา 1,210 รายการจากชีตและบันทึกเข้า Firebase">
             🔄 ดึงข้อมูลกีฬาทั้งหมด (Google Sheet)
           </button>
           <button type="button" id="quickGoWorkloadBtn" class="btn sm primary">
@@ -640,8 +669,8 @@ input:focus, select:focus, textarea:focus { outline: 2px solid var(--blue); bord
               <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
                 <div class="seg" id="periodSeg">
                   <button type="button" class="seg-btn active" data-period="week">รายสัปดาห์</button>
-                  <button type="button" class="seg-btn" data-period="range">กำหนดช่วงวันเอง</button>
-                  <button type="button" class="seg-btn" data-period="all">ทั้งหมด (1,210)</button>
+                  <button type="button" class="seg-btn" data-period="range">ช่วงวันที่</button>
+                  <button type="button" class="seg-btn" data-period="all" id="periodAllBtn">ทั้งหมด (1,210)</button>
                 </div>
 
                 <!-- Weekly Navigation Controls (Fixed & Active by Default) -->
@@ -662,7 +691,7 @@ input:focus, select:focus, textarea:focus { outline: 2px solid var(--blue); bord
 
               <div style="display:flex; align-items:center; gap:8px;">
                 <button type="button" id="captureStatBtn" class="btn sm" data-html2canvas-ignore="true" title="บันทึกภาพเฉพาะการ์ด KPI">📸 KPI</button>
-                <button type="button" id="dashboardImageBtn" class="btn sm primary" data-html2canvas-ignore="true" title="บันทึกภาพทั้งหน้า Dashboard">📸 บันทึกรูปภาพ Dashboard</button>
+                <button type="button" id="dashboardImageBtn" class="btn sm primary" data-html2canvas-ignore="true" title="บันทึกภาพทั้งหน้า Dashboard">📸 บันทึกรูปภาพ</button>
               </div>
             </div>
           </div>
@@ -768,6 +797,7 @@ input:focus, select:focus, textarea:focus { outline: 2px solid var(--blue); bord
                 <div class="card-sub">คำนวณตามกฎเวลาเตรียมงานจริง: ไทยลีก/FA Cup +4 ชม. • กีฬาต่างประเทศ +2 ชม. • Asian/Para Games +1 ชม. • ตัดกะ 04:00 น. (ไม่นับ NOC VSS.)</div>
               </div>
               <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
+                <button type="button" id="workloadClearDbBtn" class="btn sm danger">🗑️ ลบฐานข้อมูล Firebase</button>
                 <button type="button" id="workloadSyncBtn" class="btn sm sync-btn">🔄 ดึงข้อมูลกีฬาทั้งหมด</button>
                 <button type="button" id="workloadExportXlsxBtn" class="btn sm">⬇ Export สรุปชั่วโมง (.xlsx)</button>
               </div>
@@ -776,7 +806,7 @@ input:focus, select:focus, textarea:focus { outline: 2px solid var(--blue); bord
             <!-- Sub-Tabs Segmented Bar -->
             <div class="seg" id="workloadSubTabs" style="width:100%; justify-content:flex-start;">
               <button type="button" class="seg-btn active" data-subtab="monthly-hours">
-                📅 1. สรุปชั่วโมงทำงาน (รายเดือน / รายสัปดาห์)
+                📅 1. สรุปชั่วโมงรายเดือน (ใครทำงานกี่ชม.)
               </button>
               <button type="button" class="seg-btn" data-subtab="multi-month">
                 📈 2. แนวโน้มรายเดือน (ก.ย. – พ.ย.)
@@ -785,7 +815,7 @@ input:focus, select:focus, textarea:focus { outline: 2px solid var(--blue); bord
                 ⏰ 3. ตารางกะรายวัน (ทำงานยาวต่อเนื่อง)
               </button>
               <button type="button" class="seg-btn" data-subtab="daily-sport">
-                📺 4. แจกแจงตาม Channel / ฟีดกีฬา
+                🏆 4. แจกแจงตามฟีดกีฬา (แยกตามลีก)
               </button>
               <button type="button" class="seg-btn" data-subtab="engineer-feeds">
                 🔍 5. ค้นหาแมตช์รายบุคคล
@@ -798,7 +828,7 @@ input:focus, select:focus, textarea:focus { outline: 2px solid var(--blue); bord
             <div class="card">
               <div class="card-header" style="margin-bottom:0;">
                 <div style="display:flex; align-items:center; gap:12px; flex-wrap:wrap;">
-                  <span style="font-size:13px; font-weight:700;">เลือกช่วงเวลาที่ต้องการดู:</span>
+                  <span style="font-size:13px; font-weight:700;">เลือกเดือนที่ต้องการดู:</span>
                   <div class="seg" id="monthSelectorSeg">
                     <button type="button" class="seg-btn" data-month="WEEK">📆 รายสัปดาห์</button>
                     <button type="button" class="seg-btn" data-month="2026-09">กันยายน 2026</button>
@@ -877,7 +907,7 @@ input:focus, select:focus, textarea:focus { outline: 2px solid var(--blue); bord
               <div class="card" id="wkMonthlyTableCard">
                 <div class="card-header">
                   <div>
-                    <div class="card-title">ตารางสรุปชั่วโมงทำงาน (Workload Breakdown Table)</div>
+                    <div class="card-title">ตารางสรุปชั่วโมงทำงานรายเดือน (Monthly Breakdown Table)</div>
                     <div class="card-sub">ตรงกับแท็บ Monthly Dashboard ใน Google Sheet 100%</div>
                   </div>
                   <button type="button" class="icon-btn" id="captureWkMonthlyTableBtn" data-html2canvas-ignore="true" title="บันทึกภาพตารางสรุปชั่วโมง">📸</button>
@@ -985,7 +1015,7 @@ input:focus, select:focus, textarea:focus { outline: 2px solid var(--blue); bord
                     <tr>
                       <th>Engineer Name</th>
                       <th>Channel ที่ดูแล</th>
-                      <th>รายการกีฬา / ลีก</th>
+                      <th>รายการกีฬาที่ดูแลในวันนี้</th>
                       <th style="text-align:center;">เวลาเข้าเตรียมงาน</th>
                       <th style="text-align:center;">เวลาเลิกงาน</th>
                       <th style="text-align:right;">ชั่วโมงทำงานจริงรวม</th>
@@ -1010,7 +1040,7 @@ input:focus, select:focus, textarea:focus { outline: 2px solid var(--blue); bord
                     <button type="button" class="seg-btn active" data-groupby="channel">แสดงตาม Channel</button>
                     <button type="button" class="seg-btn" data-groupby="league">แสดงตามลีกกีฬา</button>
                   </div>
-                  <span style="font-size:12px; color:var(--ink-soft);">วันที่: <strong id="wkSportDateLabel">2026-10-24</strong></span>
+                  <span style="font-size:12px; color:var(--ink-soft);">วันที่แสดง: <strong id="wkSportDateLabel">2026-10-24</strong></span>
                   <button type="button" class="icon-btn" id="captureWkDailySportBtn" title="บันทึกภาพตารางแจกแจงตาม Channel">📸</button>
                 </div>
               </div>
@@ -1078,7 +1108,7 @@ input:focus, select:focus, textarea:focus { outline: 2px solid var(--blue); bord
                       <th>Broadcast Date</th>
                       <th>เวลาเริ่ม–จบ</th>
                       <th>เวลาเข้าเตรียมงาน</th>
-                      <th>Channel</th>
+                      <th>ช่อง</th>
                       <th>ลีกกีฬา</th>
                       <th>คู่แข่งขัน / รายการ</th>
                       <th>วิศวกรผู้รับผิดชอบ</th>
@@ -1099,9 +1129,10 @@ input:focus, select:focus, textarea:focus { outline: 2px solid var(--blue); bord
             <div class="card-header">
               <div>
                 <div class="card-title">📝 บันทึก / แก้ไขข้อมูลการถ่ายทอดสด (Data Entry &amp; Feed Management)</div>
-                <div class="card-sub">เพิ่มรายการใหม่ แก้ไขสถานะ หรือดึงข้อมูลกีฬาทั้งหมดจาก Google Sheet</div>
+                <div class="card-sub">ลบฐานข้อมูลเดิมใน Firebase หรือดึงข้อมูลกีฬาทั้งหมดจาก Google Sheet เข้าสู่ Firebase</div>
               </div>
               <div style="display:flex; gap:8px; flex-wrap:wrap;">
+                <button type="button" id="entryClearDbBtn" class="btn sm danger">🗑️ ลบฐานข้อมูล Firebase</button>
                 <button type="button" id="entrySyncSheetBtn" class="btn sm sync-btn">🔄 ดึงข้อมูลกีฬาทั้งหมด</button>
                 <button type="button" id="openBulkBtn" class="btn sm">📋 นำเข้าจาก Excel</button>
               </div>
@@ -1182,7 +1213,7 @@ input:focus, select:focus, textarea:focus { outline: 2px solid var(--blue); bord
                   <tr>
                     <th>วันที่</th>
                     <th>เวลา</th>
-                    <th>Channel</th>
+                    <th>ช่อง</th>
                     <th>ลีก / รายการ</th>
                     <th>คู่แข่งขัน (Feed)</th>
                     <th>วิศวกร (Assign)</th>
@@ -1205,7 +1236,7 @@ input:focus, select:focus, textarea:focus { outline: 2px solid var(--blue); bord
               <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
                 <div class="seg" id="reportPeriodSeg">
                   <button type="button" class="seg-btn active" data-rperiod="week">รายสัปดาห์</button>
-                  <button type="button" class="seg-btn" data-rperiod="range">กำหนดช่วงวันเอง</button>
+                  <button type="button" class="seg-btn" data-rperiod="range">ช่วงวันที่</button>
                   <button type="button" class="seg-btn" data-rperiod="all">ทั้งหมด</button>
                 </div>
                 <div class="week-nav" id="reportWeekNavWrap">
@@ -1214,6 +1245,7 @@ input:focus, select:focus, textarea:focus { outline: 2px solid var(--blue); bord
                   <button type="button" id="reportWeekNext" class="btn sm">สัปดาห์ถัดไป ▶</button>
                 </div>
                 <div id="reportRangeWrap" style="display:none; align-items:center; gap:6px;">
+                  <span style="font-weight:700; font-size:13px;">ช่วงเวลารายงาน:</span>
                   <input type="date" id="reportFrom" value="2026-10-19">
                   <span>ถึง</span>
                   <input type="date" id="reportTo" value="2026-10-25">
@@ -1244,7 +1276,7 @@ input:focus, select:focus, textarea:focus { outline: 2px solid var(--blue); bord
                   <tr>
                     <th>วันที่</th>
                     <th>เวลา</th>
-                    <th>Channel</th>
+                    <th>ช่อง</th>
                     <th>ลีกกีฬา</th>
                     <th>รายการ / คู่แข่งขัน</th>
                     <th>วิศวกรผู้รับผิดชอบ</th>
@@ -1278,7 +1310,7 @@ input:focus, select:focus, textarea:focus { outline: 2px solid var(--blue); bord
                     <th>ลีก</th>
                     <th>คู่แข่งขัน</th>
                     <th>วิศวกร</th>
-                    <th>จัดการ</th>
+                    <th>กู้คืน</th>
                   </tr>
                 </thead>
                 <tbody id="trashTableBody"></tbody>
@@ -1294,10 +1326,9 @@ input:focus, select:focus, textarea:focus { outline: 2px solid var(--blue); bord
           <div class="card">
             <div class="card-title" style="margin-bottom:10px;">📖 คู่มือการใช้งานระบบ Live Event Report Manager &amp; Engineer Workload</div>
             <div style="font-size:13.5px; line-height:1.7; color:var(--ink-soft); display:flex; flex-direction:column; gap:10px;">
-              <p><strong>1. ระบบยืนยันตัวตน (Firebase Login):</strong> เข้าสู่ระบบด้วยอีเมลและรหัสผ่านของคุณเพื่อซิงก์ข้อมูลแบบเรียลไทม์กับ Firestore หรือเลือกโหมด Offline Preview เพื่อดูข้อมูลทั้ง 1,210 รายการทันที</p>
-              <p><strong>2. มุมมองรายสัปดาห์ (Weekly Filter) &amp; กราฟแยกตาม Channel:</strong> ในหน้า Dashboard และหน้าออกรายงาน สามารถกดสลับดู <code>รายสัปดาห์</code> พร้อมปุ่มเลื่อน <code>◀ สัปดาห์ก่อน / สัปดาห์ถัดไป ▶</code> หรือเลือกวันที่ในปฏิทินเพื่อกระโดดไปยังสัปดาห์ที่ต้องการได้ทันที และกราฟด้านขวาจะแสดงสัดส่วนแยกตาม <code>Channel</code> จริง</p>
-              <p><strong>3. ปุ่มถ่ายรูปกราฟ (📸):</strong> การ์ดกราฟและตารางทุกใบมีปุ่ม <code>📸</code> มุมขวาบนสำหรับบันทึกภาพเฉพาะกราฟนั้นเป็นไฟล์ PNG ความละเอียดสูง</p>
-              <p><strong>4. แท็บ ⏱️ ชั่วโมงทำงานวิศวกร:</strong> แสดงแดชบอร์ดสรุปชั่วโมงทำงานรายเดือน/รายสัปดาห์ของวิศวกรทั้ง 10 คน (ไม่รวม NOC VSS.) พร้อมแถบย่อย 5 มุมมอง</p>
+              <p><strong>1. ปุ่ม 🗑️ ลบฐานข้อมูล Firebase:</strong> ล้างข้อมูลทั้งหมดในคอลเลกชัน <code>feeds</code> และ <code>reports</code> บน Firebase Firestore รวมถึงในเครื่องให้เป็น 0 รายการทันที เพื่อให้คุณเริ่มต้นฐานข้อมูลใหม่แบบสะอาด</p>
+              <p><strong>2. ปุ่ม 🔄 ดึงข้อมูลกีฬาทั้งหมด (Google Sheet):</strong> ดึงข้อมูลตารางถ่ายทอดสดและการมอบหมายวิศวกรทั้ง 1,210 รายการจากชีต <code>AIS_PLAY_Engineer_Resource_Precheck_Template.xlsx</code> แล้วบันทึกขึ้น Firebase Firestore โดยอัตโนมัติ</p>
+              <p><strong>3. มุมมองรายสัปดาห์ (Weekly Filter) &amp; กราฟแยกตาม Channel:</strong> กดสลับดู <code>รายสัปดาห์</code> พร้อมปุ่มเลื่อนสัปดาห์ และกราฟด้านขวาแสดงสัดส่วนแยกตาม <code>Channel</code> จริง พร้อมปุ่ม <code>📸</code> บันทึกรูปภาพแยกทุกกราฟ</p>
             </div>
           </div>
         </section>
@@ -1340,6 +1371,7 @@ let db = null;
 let unsubscribeSnapshot = null;
 let currentUser = null;
 let isGuestMode = false;
+let isSyncingBatch = false;
 
 try {
   if (typeof firebase !== "undefined") {
@@ -1393,7 +1425,7 @@ function showToast(text) {
   el.textContent = text;
   el.style.display = "block";
   clearTimeout(showToast._timer);
-  showToast._timer = setTimeout(() => { el.style.display = "none"; }, 3400);
+  showToast._timer = setTimeout(() => { el.style.display = "none"; }, 3600);
 }
 
 /* ===== 3. DATE & WEEK HELPERS ===== */
@@ -1434,7 +1466,7 @@ function getChannelLabel(r) {
 }
 
 function initWeekAnchors() {
-  const defaultAnchor = startOfWeek(parseISO("2026-10-19")); // Oct 19-25, 2026 (active broadcast week)
+  const defaultAnchor = startOfWeek(parseISO("2026-10-19")); // Oct 19-25, 2026
   if (!weekAnchor) weekAnchor = defaultAnchor;
   if (!wkWeekAnchor) wkWeekAnchor = new Date(weekAnchor);
   if (!reportWeekAnchor) reportWeekAnchor = new Date(weekAnchor);
@@ -1454,17 +1486,25 @@ function initWeekAnchors() {
   if (picker && weekAnchor) picker.value = toISO(weekAnchor);
 }
 
-/* ===== 4. DATA INITIALIZATION & FIRESTORE REAL-TIME SYNC ===== */
+/* ===== 4. DATA INITIALIZATION, CLEAR FIREBASE DB & REAL-TIME SYNC ===== */
 function initData() {
   try {
     localStorage.removeItem("aisplay_feeds_v2");
     localStorage.removeItem("reportmanager_records_v3");
+    localStorage.removeItem("reportmanager_xlsx_1zqM_v4");
   } catch (e) {}
+
   try {
+    if (localStorage.getItem("reportmanager_db_cleared") === "true") {
+      allRecords = [];
+      splitRecords();
+      initWeekAnchors();
+      return;
+    }
     const saved = localStorage.getItem("reportmanager_xlsx_1zqM_v5");
     if (saved) {
       const parsed = JSON.parse(saved);
-      if (Array.isArray(parsed) && parsed.length >= EMBEDDED_FEEDS.length) {
+      if (Array.isArray(parsed)) {
         allRecords = parsed;
         splitRecords();
         initWeekAnchors();
@@ -1472,6 +1512,7 @@ function initData() {
       }
     }
   } catch (e) {}
+
   allRecords = EMBEDDED_FEEDS.map(x => ({ ...x, isDeleted: false }));
   splitRecords();
   initWeekAnchors();
@@ -1487,9 +1528,19 @@ function splitRecords() {
   records = allRecords.filter(r => !r.isDeleted && !r.isTrash);
   trashRecords = allRecords.filter(r => r.isDeleted || r.isTrash);
   const badge = document.getElementById("syncStatusBadge");
-  if (badge) badge.textContent = `● ข้อมูลกีฬาทั้งหมด ${records.length.toLocaleString()} รายการ`;
+  if (badge) {
+    if (records.length === 0) {
+      badge.textContent = "⚪ ฐานข้อมูลว่างเปล่า (0 รายการ) — กดปุ่มดึงข้อมูลกีฬาทั้งหมด";
+      badge.classList.add("empty");
+    } else {
+      badge.textContent = `● ข้อมูลกีฬาทั้งหมด ${records.length.toLocaleString()} รายการ`;
+      badge.classList.remove("empty");
+    }
+  }
   const chip = document.getElementById("totalChip");
   if (chip) chip.textContent = `${records.length.toLocaleString()} feeds logged`;
+  const allBtn = document.getElementById("periodAllBtn");
+  if (allBtn) allBtn.textContent = `ทั้งหมด (${records.length.toLocaleString()})`;
   refreshChannelList();
 }
 
@@ -1504,22 +1555,95 @@ function startListeningFirestore() {
   if (!db) return;
   if (unsubscribeSnapshot) unsubscribeSnapshot();
   unsubscribeSnapshot = db.collection("feeds").onSnapshot(snapshot => {
-    if (!snapshot.empty) {
-      const remoteDocs = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
-      if (remoteDocs.length >= 100) {
-        allRecords = remoteDocs;
-      } else {
-        const byId = new Map(EMBEDDED_FEEDS.map(x => [x.id, { ...x, isDeleted: false }]));
-        remoteDocs.forEach(doc => { byId.set(doc.id, doc); });
-        allRecords = Array.from(byId.values());
-      }
-      saveLocal();
-      splitRecords();
-      refreshAllViews();
-    }
+    if (isSyncingBatch) return;
+    // Respect exact Firebase Firestore state (including when empty after clearing!)
+    allRecords = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
+    try {
+      localStorage.setItem("reportmanager_db_cleared", allRecords.length === 0 ? "true" : "false");
+    } catch (e) {}
+    saveLocal();
+    splitRecords();
+    refreshAllViews();
   }, err => {
     console.warn("Firestore snapshot warning:", err);
   });
+}
+
+async function clearCollectionInBatches(colName, progressCb) {
+  if (!db) return 0;
+  const snap = await db.collection(colName).get();
+  if (snap.empty) return 0;
+  const docs = snap.docs;
+  let deleted = 0;
+  let batch = db.batch();
+  let op = 0;
+  for (let i = 0; i < docs.length; i++) {
+    batch.delete(docs[i].ref);
+    op++;
+    deleted++;
+    if (op >= 400) {
+      await batch.commit();
+      if (progressCb) progressCb(deleted, docs.length, colName);
+      batch = db.batch();
+      op = 0;
+    }
+  }
+  if (op > 0) {
+    await batch.commit();
+    if (progressCb) progressCb(deleted, docs.length, colName);
+  }
+  return deleted;
+}
+
+async function executeClearDatabase() {
+  const progBox = document.getElementById("clearDbProgressBox");
+  const confirmBtn = document.getElementById("confirmClearDbBtn");
+  if (progBox) {
+    progBox.style.display = "block";
+    progBox.textContent = "⏳ กำลังเริ่มต้นลบฐานข้อมูลใน Firebase Firestore...";
+  }
+  if (confirmBtn) confirmBtn.disabled = true;
+
+  isSyncingBatch = true;
+  try {
+    let totalDeleted = 0;
+    if (db) {
+      try {
+        totalDeleted += await clearCollectionInBatches("feeds", (done, tot) => {
+          if (progBox) progBox.textContent = `⏳ กำลังลบคอลเลกชัน feeds... (${done}/${tot} รายการ)`;
+        });
+        totalDeleted += await clearCollectionInBatches("reports", (done, tot) => {
+          if (progBox) progBox.textContent = `⏳ กำลังลบคอลเลกชัน reports... (${done}/${tot} รายการ)`;
+        });
+      } catch (fireErr) {
+        console.warn("Firestore clear error:", fireErr);
+      }
+    }
+
+    try {
+      localStorage.setItem("reportmanager_db_cleared", "true");
+      localStorage.removeItem("reportmanager_xlsx_1zqM_v5");
+      localStorage.removeItem("reportmanager_xlsx_1zqM_v4");
+      localStorage.removeItem("reportmanager_records_v3");
+      localStorage.removeItem("aisplay_feeds_v2");
+    } catch (e) {}
+
+    allRecords = [];
+    splitRecords();
+    refreshAllViews();
+
+    if (progBox) {
+      progBox.textContent = `✅ ลบข้อมูลเสร็จสิ้น (${totalDeleted.toLocaleString()} รายการใน Firebase) — ตอนนี้ฐานข้อมูลเป็น 0 รายการแล้ว`;
+    }
+    showToast("🗑️ ล้างฐานข้อมูลเป็น 0 รายการเรียบร้อยแล้ว! กดปุ่ม '🔄 ดึงข้อมูลกีฬาทั้งหมด' เพื่อดึงข้อมูลใหม่ได้เลย");
+    setTimeout(() => {
+      document.getElementById("clearDbModal").style.display = "none";
+      if (progBox) progBox.style.display = "none";
+      if (confirmBtn) confirmBtn.disabled = false;
+    }, 900);
+  } finally {
+    isSyncingBatch = false;
+  }
 }
 
 /* ===== 5. SCREENSHOT / CAMERA CAPTURE (html2canvas) ===== */
@@ -1644,7 +1768,9 @@ function updateDashboard() {
   document.getElementById("statIssue").textContent = issue.toLocaleString();
   document.getElementById("statWait").textContent = wait.toLocaleString();
 
-  if (selectedPeriod === "week" && weekAnchor) {
+  if (records.length === 0) {
+    document.getElementById("statTotalMeta").textContent = "ฐานข้อมูลว่างเปล่า (0 รายการ)";
+  } else if (selectedPeriod === "week" && weekAnchor) {
     const endDt = addDaysDate(weekAnchor, 6);
     document.getElementById("statTotalMeta").textContent = `สัปดาห์ ${thaiShort(weekAnchor)} - ${thaiShort(endDt)} ${endDt.getFullYear()}`;
   } else if (selectedPeriod === "range") {
@@ -1658,7 +1784,6 @@ function updateDashboard() {
     renderChartByChannel(list);
   }
 
-  // Followup / Recent list (showing Channel clearly)
   const recent = list.slice(-10).reverse();
   document.getElementById("followupList").innerHTML = recent.length ? recent.map(r => `
     <div style="display:flex; align-items:center; justify-content:space-between; padding:9px 13px; background:var(--surface-2); border-radius:10px; border:1px solid var(--border); gap:8px; flex-wrap:wrap;">
@@ -1673,7 +1798,7 @@ function updateDashboard() {
         <span class="badge ${r.status || 'Pass'}">${r.status || 'Pass'}</span>
       </div>
     </div>
-  `).join("") : `<div style="padding:16px; text-align:center; color:var(--ink-soft);">ไม่มีรายการในช่วงสัปดาห์นี้ (กด ◀ สัปดาห์ก่อน หรือ สัปดาห์ถัดไป ▶ เพื่อเลื่อนดู)</div>`;
+  `).join("") : `<div style="padding:18px; text-align:center; color:var(--ink-soft);">${records.length === 0 ? 'ฐานข้อมูลว่างเปล่า (0 รายการ) — กดปุ่ม <strong>🔄 ดึงข้อมูลกีฬาทั้งหมด (Google Sheet)</strong> ด้านบนเพื่อดึงข้อมูลเข้าสู่ระบบ' : 'ไม่มีรายการในช่วงสัปดาห์นี้ (กด ◀ สัปดาห์ก่อน หรือ สัปดาห์ถัดไป ▶ เพื่อเลื่อนดู)'}</div>`;
 }
 
 function renderChartByDate(list) {
@@ -1996,7 +2121,6 @@ function renderWorkloadModule() {
     });
   }
 
-  // 2. Sub-tab 2: Multi-Month Trend
   let sepSum = 0, octSum = 0, novSum = 0, allSum = 0, allDaysSum = 0;
   const trendData = ENGINEERS.map(eng => {
     const sSep = computeEngineerPeriod(enriched, eng, "2026-09");
@@ -2126,7 +2250,6 @@ function renderDailyShiftSubTabs(enriched) {
   document.getElementById("wkGanttContinuous").innerHTML = gantt1.join("");
   document.getElementById("wkDailyContTableBody").innerHTML = table1.join("");
 
-  // Sub-tab 4: Breakdown by Channel (default) or League
   const gantt2 = [], table2 = [];
   const hdrLabel = document.getElementById("wkGantt2HeaderLabel");
   if (hdrLabel) hdrLabel.textContent = wkSportGroupBy === "channel" ? "Engineer — Channel" : "Engineer — ลีกกีฬา";
@@ -2241,7 +2364,7 @@ function getFiltered() {
 function renderTable() {
   const list = getFiltered();
   document.getElementById("entryCountLabel").textContent = `แสดง ${list.length.toLocaleString()} รายการ`;
-  document.getElementById("tableBody").innerHTML = list.slice(0, 300).map(r => `
+  document.getElementById("tableBody").innerHTML = list.length ? list.slice(0, 300).map(r => `
     <tr>
       <td style="font-family:var(--mono); white-space:nowrap;">${r.date}</td>
       <td style="font-family:var(--mono); white-space:nowrap;">${r.start}-${r.end}</td>
@@ -2255,7 +2378,7 @@ function renderTable() {
         <button type="button" class="btn sm ghost row-del-btn" data-id="${r.id}" title="ย้ายไปถังขยะ">🗑️</button>
       </td>
     </tr>
-  `).join("");
+  `).join("") : `<tr><td colspan="8" style="text-align:center; padding:24px; color:var(--ink-soft);">ไม่มีข้อมูลในระบบ (0 รายการ) — กดปุ่ม <strong>🔄 ดึงข้อมูลกีฬาทั้งหมด</strong> เพื่อดึงข้อมูลเข้าสู่ Firebase</td></tr>`;
 
   document.querySelectorAll(".row-edit-btn").forEach(btn => {
     btn.addEventListener("click", () => {
@@ -2378,10 +2501,47 @@ function renderTrash() {
   });
 }
 
-/* ===== 10. PULL ALL SPORTS DATA FROM GOOGLE SHEET ===== */
+/* ===== 10. PULL ALL SPORTS DATA & WRITE TO FIREBASE FIRESTORE ===== */
+async function uploadRecordsToFirestore(recordsToUpload) {
+  if (!db) return false;
+  const badge = document.getElementById("syncStatusBadge");
+  isSyncingBatch = true;
+  try {
+    let batch = db.batch();
+    let op = 0;
+    let uploaded = 0;
+    for (let i = 0; i < recordsToUpload.length; i++) {
+      const rec = recordsToUpload[i];
+      const docId = String(rec.id || `xlsx_${i}_${rec.date}`).replace(/[^a-zA-Z0-9_-]/g, "_");
+      const docRef = db.collection("feeds").doc(docId);
+      batch.set(docRef, { ...rec, id: docId, isDeleted: false });
+      op++;
+      uploaded++;
+      if (op >= 400) {
+        await batch.commit();
+        if (badge) badge.textContent = `⏳ กำลังอัปโหลดเข้า Firebase... (${uploaded.toLocaleString()}/${recordsToUpload.length.toLocaleString()})`;
+        batch = db.batch();
+        op = 0;
+      }
+    }
+    if (op > 0) {
+      await batch.commit();
+    }
+    return true;
+  } catch (err) {
+    console.warn("Firestore batch upload warning:", err);
+    return false;
+  } finally {
+    isSyncingBatch = false;
+  }
+}
+
 async function syncAllSportsFromGoogleSheet() {
   const badge = document.getElementById("syncStatusBadge");
+  badge.classList.remove("empty");
   badge.textContent = "⏳ กำลังดึงข้อมูลกีฬาทั้งหมดจาก Google Sheet...";
+
+  let pulled = [];
   try {
     const url = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json&sheet=Event%20Schedule`;
     const res = await fetch(url);
@@ -2389,7 +2549,6 @@ async function syncAllSportsFromGoogleSheet() {
     const jsonStr = txt.substring(txt.indexOf("{"), txt.lastIndexOf("}") + 1);
     const data = JSON.parse(jsonStr);
     if (data && data.table && data.table.rows) {
-      const pulled = [];
       data.table.rows.forEach((r, idx) => {
         const c = r.c || [];
         const dVal = c[2] ? (c[2].f || c[2].v) : "";
@@ -2417,21 +2576,31 @@ async function syncAllSportsFromGoogleSheet() {
           });
         }
       });
-      if (pulled.length > 0) {
-        allRecords = pulled;
-        saveLocal();
-        splitRecords();
-        refreshAllViews();
-        showToast(`✅ ดึงข้อมูลกีฬาทั้งหมดสำเร็จ (${pulled.length.toLocaleString()} รายการ)!`);
-        return;
-      }
     }
   } catch (e) {}
-  allRecords = EMBEDDED_FEEDS.map(x => ({ ...x, isDeleted: false }));
+
+  if (pulled.length === 0) {
+    pulled = EMBEDDED_FEEDS.map(x => ({ ...x, isDeleted: false }));
+  }
+
+  try {
+    localStorage.setItem("reportmanager_db_cleared", "false");
+  } catch (e) {}
+
+  allRecords = pulled;
   saveLocal();
   splitRecords();
   refreshAllViews();
-  showToast(`✅ อัปเดตข้อมูลกีฬาทั้งหมด ${records.length.toLocaleString()} รายการเรียบร้อยแล้ว!`);
+
+  if (db) {
+    const ok = await uploadRecordsToFirestore(pulled);
+    splitRecords();
+    if (ok) {
+      showToast(`✅ ดึงข้อมูลและบันทึกเข้า Firebase Firestore สำเร็จ (${records.length.toLocaleString()} รายการ)!`);
+      return;
+    }
+  }
+  showToast(`✅ ดึงข้อมูลกีฬาทั้งหมด ${records.length.toLocaleString()} รายการเรียบร้อยแล้ว!`);
 }
 
 function exportWorkloadExcel() {
@@ -2510,7 +2679,7 @@ window.addEventListener("DOMContentLoaded", () => {
       }
     });
   } else {
-    setLoggedInUI("Offline Mode (1,210 Feeds)", false);
+    setLoggedInUI("Offline Mode", false);
   }
 
   document.getElementById("loginBtn").addEventListener("click", async () => {
@@ -2543,7 +2712,7 @@ window.addEventListener("DOMContentLoaded", () => {
 
   document.getElementById("guestContinueBtn").addEventListener("click", () => {
     isGuestMode = true;
-    setLoggedInUI("Offline / Preview (1,210 Feeds)", false);
+    setLoggedInUI("Offline / Preview", false);
     showToast("เข้าใช้งานโหมด Offline / Preview เรียบร้อยแล้ว");
   });
 
@@ -2560,6 +2729,21 @@ window.addEventListener("DOMContentLoaded", () => {
   document.getElementById("topAuthBtn").addEventListener("click", () => {
     openLoginGate();
   });
+
+  // Clear Firebase Database Modal & Buttons
+  const clearDbModal = document.getElementById("clearDbModal");
+  function openClearDbModal() {
+    const progBox = document.getElementById("clearDbProgressBox");
+    if (progBox) progBox.style.display = "none";
+    document.getElementById("confirmClearDbBtn").disabled = false;
+    clearDbModal.style.display = "flex";
+  }
+  document.getElementById("clearFirebaseDbBtn").addEventListener("click", openClearDbModal);
+  document.getElementById("workloadClearDbBtn").addEventListener("click", openClearDbModal);
+  document.getElementById("entryClearDbBtn").addEventListener("click", openClearDbModal);
+  document.getElementById("closeClearDbModalBtn").addEventListener("click", () => { clearDbModal.style.display = "none"; });
+  document.getElementById("cancelClearDbBtn").addEventListener("click", () => { clearDbModal.style.display = "none"; });
+  document.getElementById("confirmClearDbBtn").addEventListener("click", executeClearDatabase);
 
   // Main Sidebar Tab Switching
   const viewTitles = {
@@ -2760,6 +2944,8 @@ window.addEventListener("DOMContentLoaded", () => {
       isDeleted: false
     };
 
+    try { localStorage.setItem("reportmanager_db_cleared", "false"); } catch (e) {}
+
     if (editingId) {
       const idx = allRecords.findIndex(x => x.id === editingId);
       if (idx !== -1) allRecords[idx] = { ...allRecords[idx], ...payload };
@@ -2850,6 +3036,7 @@ window.addEventListener("DOMContentLoaded", () => {
         }
       });
       if (added > 0) {
+        try { localStorage.setItem("reportmanager_db_cleared", "false"); } catch (e) {}
         saveLocal();
         splitRecords();
         refreshAllViews();
