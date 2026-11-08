@@ -14,43 +14,60 @@
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
 <style>
 :root{
-  --bg: #F4F6F9;
+  --bg: #F8FAFC;
   --surface: #FFFFFF;
-  --surface-2: #FAFBFC;
-  --border: #EAEEF3;
-  --ink: #23303E;
-  --ink-soft: #66748A;
-  --ink-faint: #9AA6B5;
-  --void: #0B1420;
-  --navy: #1F3A5F;
-  --navy-deep: #16283F;
-  --blue: #3B6EA5;
-  --blue-soft: #EAF1F9;
-  --pass: #48A57C;
-  --pass-bg: #E7F5EE;
-  --fix: #D9695F;
-  --fix-bg: #FBEAE8;
-  --issue: #D9A234;
-  --issue-bg: #FBF3E0;
-  --wait: #8B96A5;
-  --wait-bg: #EEF0F3;
-  --led: #3DE686;
-  --led-dim: rgba(61,230,134,0.16);
-  --tally-red: #E0483F;
-  --radius: 18px;
+  --surface-2: #F1F5F9;
+  --border: #E2E8F0;
+  --ink: #0F172A;
+  --ink-soft: #475569;
+  --ink-faint: #94A3B8;
+  --void: #020617;
+  --navy: #0F172A;
+  --navy-deep: #0B1120;
+  --blue: #2563EB;
+  --blue-soft: #EFF6FF;
+  --pass: #10B981;
+  --pass-bg: #ECFDF5;
+  --fix: #EF4444;
+  --fix-bg: #FEF2F2;
+  --issue: #F59E0B;
+  --issue-bg: #FFFBEB;
+  --wait: #64748B;
+  --wait-bg: #F1F5F9;
+  --led: #10B981;
+  --led-dim: rgba(16,185,129,0.18);
+  --tally-red: #EF4444;
+  --radius: 16px;
   --radius-sm: 10px;
-  --shadow: 0 1px 2px rgba(11,20,32,0.04), 0 6px 20px rgba(11,20,32,0.06);
-  --shadow-lift: 0 4px 10px rgba(11,20,32,0.06), 0 14px 32px rgba(11,20,32,0.10);
+  --shadow: 0 1px 3px rgba(15,23,42,0.06), 0 8px 24px -4px rgba(15,23,42,0.05);
+  --shadow-lift: 0 4px 6px -1px rgba(15,23,42,0.08), 0 20px 25px -5px rgba(15,23,42,0.08);
   --mono: 'JetBrains Mono', monospace;
   --sans: 'Inter', 'Noto Sans Thai', sans-serif;
   --display: 'Manrope', 'Noto Sans Thai', sans-serif;
 }
 html.theme-dark{
-  --bg:#10151c; --surface:#171d26; --surface-2:#1c232e; --border:rgba(255,255,255,0.09);
-  --ink:#E7ECF2; --ink-soft:#9BA9BA; --ink-faint:#69758A;
-  --blue-soft: rgba(59,110,165,0.18);
-  --pass-bg: rgba(72,165,124,0.16); --fix-bg: rgba(217,105,95,0.16);
-  --issue-bg: rgba(217,162,52,0.16); --wait-bg: rgba(139,150,165,0.16);
+  --bg: #090D16;
+  --surface: #111827;
+  --surface-2: #1E293B;
+  --border: rgba(255,255,255,0.09);
+  --ink: #F8FAFC;
+  --ink-soft: #94A3B8;
+  --ink-faint: #64748B;
+  --void: #020617;
+  --navy: #1E293B;
+  --navy-deep: #070B12;
+  --blue: #3B82F6;
+  --blue-soft: rgba(59,130,246,0.15);
+  --pass: #34D399;
+  --pass-bg: rgba(16,185,129,0.15);
+  --fix: #F87171;
+  --fix-bg: rgba(239,68,68,0.15);
+  --issue: #FBBF24;
+  --issue-bg: rgba(245,158,11,0.15);
+  --wait: #94A3B8;
+  --wait-bg: rgba(100,116,139,0.15);
+  --shadow: 0 2px 6px rgba(0,0,0,0.35), 0 12px 28px rgba(0,0,0,0.45);
+  --shadow-lift: 0 4px 12px rgba(0,0,0,0.4), 0 24px 36px rgba(0,0,0,0.55);
 }
 * { box-sizing: border-box; margin: 0; padding: 0; }
 body {
@@ -408,22 +425,57 @@ html.theme-dark .week-label { color: var(--ink); }
 /* Stat KPI Grid */
 .stat-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(175px, 1fr));
-  gap: 14px;
+  grid-template-columns: repeat(auto-fit, minmax(185px, 1fr));
+  gap: 16px;
 }
 .stat-card {
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: var(--radius);
-  padding: 16px 18px;
+  padding: 18px 20px;
   box-shadow: var(--shadow);
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 8px;
+  position: relative;
+  overflow: hidden;
+  transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.2s ease, border-color 0.2s ease;
 }
-.stat-label { font-size: 12px; font-weight: 600; color: var(--ink-soft); }
-.stat-val { font-family: var(--mono); font-size: 26px; font-weight: 800; color: var(--ink); }
-.stat-meta { font-size: 11px; color: var(--ink-faint); }
+.stat-card::before {
+  content: "";
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, var(--blue), transparent);
+  opacity: 0.85;
+}
+.stat-card:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-lift);
+  border-color: rgba(37,99,235,0.3);
+}
+.stat-label {
+  font-size: 11.5px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--ink-soft);
+}
+.stat-val {
+  font-family: var(--mono);
+  font-size: 28px;
+  font-weight: 800;
+  color: var(--ink);
+  letter-spacing: -0.02em;
+  line-height: 1.15;
+}
+.stat-meta {
+  font-size: 11.5px;
+  color: var(--ink-faint);
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
 
 /* Data Tables */
 .table-wrap { overflow-x: auto; border-radius: 12px; border: 1px solid var(--border); }
@@ -1986,55 +2038,107 @@ function renderChartByDate(list) {
   const isFill = dateType === "area";
   const isStacked = dateType === "stackedBar" || dateType === "area";
 
+  const isDarkTheme = document.documentElement.classList.contains("theme-dark");
+  const gridColor = isDarkTheme ? "rgba(255,255,255,0.06)" : "rgba(15,23,42,0.06)";
+  const tickColor = isDarkTheme ? "#94A3B8" : "#64748B";
+
   chartByDateInstance = new Chart(ctxD, {
     type: isLine ? "line" : "bar",
     data: {
       labels,
       datasets: [
         {
-          label: "Pass",
+          label: "Pass (ปกติ)",
           data: passArr,
-          backgroundColor: isFill ? "rgba(72,165,124,0.35)" : "#48A57C",
-          borderColor: "#48A57C",
-          borderRadius: isLine ? 0 : 5,
-          tension: 0.25,
-          fill: isFill
+          backgroundColor: isFill ? "rgba(16,185,129,0.22)" : "#10B981",
+          borderColor: "#10B981",
+          borderWidth: isLine ? 2.5 : 0,
+          borderRadius: isLine ? 0 : 6,
+          tension: 0.35,
+          fill: isFill,
+          pointRadius: isLine ? 4 : 0,
+          pointHoverRadius: 6
         },
         {
-          label: "Fix",
+          label: "Fix (แก้ไข)",
           data: fixArr,
-          backgroundColor: isFill ? "rgba(217,105,95,0.35)" : "#D9695F",
-          borderColor: "#D9695F",
-          borderRadius: isLine ? 0 : 5,
-          tension: 0.25,
-          fill: isFill
+          backgroundColor: isFill ? "rgba(239,68,68,0.22)" : "#EF4444",
+          borderColor: "#EF4444",
+          borderWidth: isLine ? 2.5 : 0,
+          borderRadius: isLine ? 0 : 6,
+          tension: 0.35,
+          fill: isFill,
+          pointRadius: isLine ? 4 : 0,
+          pointHoverRadius: 6
         },
         {
-          label: "Issue",
+          label: "Issue (ปัญหา)",
           data: issueArr,
-          backgroundColor: isFill ? "rgba(217,162,52,0.35)" : "#D9A234",
-          borderColor: "#D9A234",
-          borderRadius: isLine ? 0 : 5,
-          tension: 0.25,
-          fill: isFill
+          backgroundColor: isFill ? "rgba(245,158,11,0.22)" : "#F59E0B",
+          borderColor: "#F59E0B",
+          borderWidth: isLine ? 2.5 : 0,
+          borderRadius: isLine ? 0 : 6,
+          tension: 0.35,
+          fill: isFill,
+          pointRadius: isLine ? 4 : 0,
+          pointHoverRadius: 6
         },
         {
-          label: "Wait",
+          label: "Wait (รอตรวจ)",
           data: waitArr,
-          backgroundColor: isFill ? "rgba(139,150,165,0.35)" : "#8B96A5",
-          borderColor: "#8B96A5",
-          borderRadius: isLine ? 0 : 5,
-          tension: 0.25,
-          fill: isFill
+          backgroundColor: isFill ? "rgba(100,116,139,0.22)" : "#94A3B8",
+          borderColor: "#94A3B8",
+          borderWidth: isLine ? 2.5 : 0,
+          borderRadius: isLine ? 0 : 6,
+          tension: 0.35,
+          fill: isFill,
+          pointRadius: isLine ? 4 : 0,
+          pointHoverRadius: 6
         }
       ]
     },
     options: {
       responsive: true,
       maintainAspectRatio: false,
+      plugins: {
+        legend: {
+          position: "top",
+          align: "end",
+          labels: {
+            boxWidth: 12,
+            boxHeight: 12,
+            usePointStyle: true,
+            pointStyle: "circle",
+            color: tickColor,
+            font: { family: "'Inter', sans-serif", size: 12, weight: 600 }
+          }
+        },
+        tooltip: {
+          backgroundColor: isDarkTheme ? "rgba(17,24,39,0.95)" : "rgba(255,255,255,0.95)",
+          titleColor: isDarkTheme ? "#F8FAFC" : "#0F172A",
+          bodyColor: isDarkTheme ? "#CBD5E1" : "#334155",
+          borderColor: isDarkTheme ? "rgba(255,255,255,0.12)" : "rgba(15,23,42,0.1)",
+          borderWidth: 1,
+          padding: 12,
+          boxPadding: 6,
+          usePointStyle: true,
+          cornerRadius: 10,
+          bodyFont: { family: "'Inter', sans-serif", size: 12 },
+          titleFont: { family: "'Manrope', sans-serif", size: 13, weight: 700 }
+        }
+      },
       scales: {
-        x: { stacked: isStacked },
-        y: { stacked: isStacked, beginAtZero: true, ticks: { precision: 0 } }
+        x: {
+          stacked: isStacked,
+          grid: { color: gridColor, drawBorder: false },
+          ticks: { color: tickColor, font: { family: "'Inter', sans-serif", size: 11 } }
+        },
+        y: {
+          stacked: isStacked,
+          beginAtZero: true,
+          grid: { color: gridColor, drawBorder: false },
+          ticks: { precision: 0, color: tickColor, font: { family: "'JetBrains Mono', monospace", size: 11 } }
+        }
       }
     }
   });
@@ -2053,13 +2157,31 @@ function renderChartByChannel(list) {
   const chCounts = sortedCh.map(x => x[1]);
 
   const palette = [
-    "#3B6EA5", "#48A57C", "#D9A234", "#D9695F", "#1F3A5F",
-    "#6B4FA0", "#2E8B8B", "#C46A9B", "#5E7CE2", "#B98B3D",
-    "#5B84B1", "#6BA38B"
+    "#2563EB", "#10B981", "#F59E0B", "#EF4444", "#8B5CF6",
+    "#06B6D4", "#EC4899", "#14B8A6", "#6366F1", "#F97316",
+    "#3B82F6", "#10B981"
   ];
   const chType = document.getElementById("chartChannelTypeSelect").value || "hbar";
   const ctxC = canvasEl.getContext("2d");
   if (chartByChannelInstance) chartByChannelInstance.destroy();
+
+  const isDarkCh = document.documentElement.classList.contains("theme-dark");
+  const gridColorCh = isDarkCh ? "rgba(255,255,255,0.06)" : "rgba(15,23,42,0.06)";
+  const tickColorCh = isDarkCh ? "#94A3B8" : "#64748B";
+
+  const modernTooltipCh = {
+    backgroundColor: isDarkCh ? "rgba(17,24,39,0.95)" : "rgba(255,255,255,0.95)",
+    titleColor: isDarkCh ? "#F8FAFC" : "#0F172A",
+    bodyColor: isDarkCh ? "#CBD5E1" : "#334155",
+    borderColor: isDarkCh ? "rgba(255,255,255,0.12)" : "rgba(15,23,42,0.1)",
+    borderWidth: 1,
+    padding: 12,
+    boxPadding: 6,
+    usePointStyle: true,
+    cornerRadius: 10,
+    bodyFont: { family: "'Inter', sans-serif", size: 12 },
+    titleFont: { family: "'Manrope', sans-serif", size: 13, weight: 700 }
+  };
 
   if (chType === "donut" || chType === "polar") {
     chartByChannelInstance = new Chart(ctxC, {
@@ -2069,14 +2191,28 @@ function renderChartByChannel(list) {
         datasets: [{
           label: "จำนวนฟีดตาม Channel",
           data: chCounts,
-          backgroundColor: chLabels.map((_, i) => palette[i % palette.length])
+          backgroundColor: chLabels.map((_, i) => palette[i % palette.length]),
+          borderWidth: isDarkCh ? 2 : 2,
+          borderColor: isDarkCh ? "#111827" : "#FFFFFF"
         }]
       },
       options: {
         responsive: true,
         maintainAspectRatio: false,
+        cutout: chType === "donut" ? "68%" : undefined,
         plugins: {
-          legend: { position: "right", labels: { boxWidth: 10, font: { size: 11 } } }
+          legend: {
+            position: "right",
+            labels: {
+              boxWidth: 10,
+              boxHeight: 10,
+              usePointStyle: true,
+              pointStyle: "circle",
+              color: tickColorCh,
+              font: { family: "'Inter', sans-serif", size: 11, weight: 600 }
+            }
+          },
+          tooltip: modernTooltipCh
         }
       }
     });
@@ -2090,17 +2226,28 @@ function renderChartByChannel(list) {
           label: "จำนวนรายการ (Channel)",
           data: chCounts,
           backgroundColor: chLabels.map((_, i) => palette[i % palette.length]),
-          borderRadius: 6
+          borderRadius: 8
         }]
       },
       options: {
         indexAxis: horizontal ? "y" : "x",
         responsive: true,
         maintainAspectRatio: false,
-        plugins: { legend: { display: false } },
+        plugins: {
+          legend: { display: false },
+          tooltip: modernTooltipCh
+        },
         scales: {
-          x: { beginAtZero: true, ticks: { precision: 0 } },
-          y: { beginAtZero: true, ticks: { precision: 0 } }
+          x: {
+            beginAtZero: true,
+            grid: { color: gridColorCh, drawBorder: false },
+            ticks: { precision: 0, color: tickColorCh, font: { family: "'JetBrains Mono', monospace", size: 11 } }
+          },
+          y: {
+            beginAtZero: true,
+            grid: { color: gridColorCh, drawBorder: false },
+            ticks: { precision: 0, color: tickColorCh, font: { family: "'Inter', sans-serif", size: 11 } }
+          }
         }
       }
     });
@@ -2249,19 +2396,69 @@ function renderWorkloadModule() {
   if (typeof Chart !== "undefined") {
     const ctxM = document.getElementById("chartWorkloadMonthly").getContext("2d");
     if (chartWorkloadMonthlyInstance) chartWorkloadMonthlyInstance.destroy();
+    const isDarkWkM = document.documentElement.classList.contains("theme-dark");
+    const gridColorWkM = isDarkWkM ? "rgba(255,255,255,0.06)" : "rgba(15,23,42,0.06)";
+    const tickColorWkM = isDarkWkM ? "#94A3B8" : "#64748B";
+
     chartWorkloadMonthlyInstance = new Chart(ctxM, {
       type: "bar",
       data: {
         labels: ENGINEERS,
         datasets: [
-          { label: "กะกลางวัน (Day Shift ชม.)", data: statsByEng.map(x => x.dayHrs), backgroundColor: "#3B6EA5" },
-          { label: "กะดึก (Night Shift ชม.)", data: statsByEng.map(x => x.nightHrs), backgroundColor: "#D9A234" }
+          {
+            label: "กะกลางวัน (Day Shift ชม.)",
+            data: statsByEng.map(x => x.dayHrs),
+            backgroundColor: "#2563EB",
+            borderRadius: 6
+          },
+          {
+            label: "กะดึก (Night Shift ชม.)",
+            data: statsByEng.map(x => x.nightHrs),
+            backgroundColor: "#F59E0B",
+            borderRadius: 6
+          }
         ]
       },
       options: {
         responsive: true,
         maintainAspectRatio: false,
-        scales: { x: { stacked: true }, y: { stacked: true } }
+        plugins: {
+          legend: {
+            position: "top",
+            align: "end",
+            labels: {
+              boxWidth: 10,
+              boxHeight: 10,
+              usePointStyle: true,
+              pointStyle: "circle",
+              color: tickColorWkM,
+              font: { family: "'Inter', sans-serif", size: 12, weight: 600 }
+            }
+          },
+          tooltip: {
+            backgroundColor: isDarkWkM ? "rgba(17,24,39,0.95)" : "rgba(255,255,255,0.95)",
+            titleColor: isDarkWkM ? "#F8FAFC" : "#0F172A",
+            bodyColor: isDarkWkM ? "#CBD5E1" : "#334155",
+            borderColor: isDarkWkM ? "rgba(255,255,255,0.12)" : "rgba(15,23,42,0.1)",
+            borderWidth: 1,
+            padding: 12,
+            boxPadding: 6,
+            cornerRadius: 10
+          }
+        },
+        scales: {
+          x: {
+            stacked: true,
+            grid: { color: gridColorWkM, drawBorder: false },
+            ticks: { color: tickColorWkM, font: { family: "'Inter', sans-serif", size: 11 } }
+          },
+          y: {
+            stacked: true,
+            beginAtZero: true,
+            grid: { color: gridColorWkM, drawBorder: false },
+            ticks: { color: tickColorWkM, font: { family: "'JetBrains Mono', monospace", size: 11 } }
+          }
+        }
       }
     });
   }
@@ -2307,17 +2504,59 @@ function renderWorkloadModule() {
   if (typeof Chart !== "undefined") {
     const ctxT = document.getElementById("chartWorkloadTrend").getContext("2d");
     if (chartWorkloadTrendInstance) chartWorkloadTrendInstance.destroy();
+    const isDarkWkT = document.documentElement.classList.contains("theme-dark");
+    const gridColorWkT = isDarkWkT ? "rgba(255,255,255,0.06)" : "rgba(15,23,42,0.06)";
+    const tickColorWkT = isDarkWkT ? "#94A3B8" : "#64748B";
+
     chartWorkloadTrendInstance = new Chart(ctxT, {
       type: "bar",
       data: {
         labels: ENGINEERS,
         datasets: [
-          { label: "ก.ย. 2026", data: trendData.map(x => x.sep), backgroundColor: "#48A57C" },
-          { label: "ต.ค. 2026", data: trendData.map(x => x.oct), backgroundColor: "#3B6EA5" },
-          { label: "พ.ย. 2026", data: trendData.map(x => x.nov), backgroundColor: "#D9A234" }
+          { label: "ก.ย. 2026", data: trendData.map(x => x.sep), backgroundColor: "#10B981", borderRadius: 6 },
+          { label: "ต.ค. 2026", data: trendData.map(x => x.oct), backgroundColor: "#2563EB", borderRadius: 6 },
+          { label: "พ.ย. 2026", data: trendData.map(x => x.nov), backgroundColor: "#F59E0B", borderRadius: 6 }
         ]
       },
-      options: { responsive: true, maintainAspectRatio: false }
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: {
+            position: "top",
+            align: "end",
+            labels: {
+              boxWidth: 10,
+              boxHeight: 10,
+              usePointStyle: true,
+              pointStyle: "circle",
+              color: tickColorWkT,
+              font: { family: "'Inter', sans-serif", size: 12, weight: 600 }
+            }
+          },
+          tooltip: {
+            backgroundColor: isDarkWkT ? "rgba(17,24,39,0.95)" : "rgba(255,255,255,0.95)",
+            titleColor: isDarkWkT ? "#F8FAFC" : "#0F172A",
+            bodyColor: isDarkWkT ? "#CBD5E1" : "#334155",
+            borderColor: isDarkWkT ? "rgba(255,255,255,0.12)" : "rgba(15,23,42,0.1)",
+            borderWidth: 1,
+            padding: 12,
+            boxPadding: 6,
+            cornerRadius: 10
+          }
+        },
+        scales: {
+          x: {
+            grid: { color: gridColorWkT, drawBorder: false },
+            ticks: { color: tickColorWkT, font: { family: "'Inter', sans-serif", size: 11 } }
+          },
+          y: {
+            beginAtZero: true,
+            grid: { color: gridColorWkT, drawBorder: false },
+            ticks: { color: tickColorWkT, font: { family: "'JetBrains Mono', monospace", size: 11 } }
+          }
+        }
+      }
     });
   }
 
