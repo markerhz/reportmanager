@@ -582,6 +582,354 @@ input:focus, select:focus, textarea:focus { outline: 2px solid var(--blue); bord
   .side-nav { flex-direction: row; overflow-x: auto; padding: 8px 12px; }
   .tab-btn.side-tab-btn { width: auto; white-space: nowrap; }
 }
+
+/* ===== MULTI-THEME PRESETS (1: Mission Control, 2: Glassento, 4: Minimal Swiss) ===== */
+
+/* Style 1: Broadcast Mission Control */
+html.theme-mission {
+  --bg: #050911;
+  --surface: #0B1220;
+  --surface-2: #101A2E;
+  --border: rgba(16, 185, 129, 0.24);
+  --ink: #ECFDF5;
+  --ink-soft: #94A3B8;
+  --ink-faint: #64748B;
+  --void: #02060D;
+  --navy: #064E3B;
+  --navy-deep: #040810;
+  --blue: #06B6D4;
+  --blue-soft: rgba(6, 182, 212, 0.14);
+  --pass: #10B981;
+  --pass-bg: rgba(16, 185, 129, 0.16);
+  --fix: #F43F5E;
+  --fix-bg: rgba(244, 63, 94, 0.16);
+  --issue: #F59E0B;
+  --issue-bg: rgba(245, 158, 11, 0.16);
+  --wait: #94A3B8;
+  --wait-bg: rgba(148, 163, 184, 0.14);
+  --led: #10B981;
+  --led-dim: rgba(16, 185, 129, 0.22);
+  --radius: 12px;
+  --radius-sm: 8px;
+  --shadow: 0 0 0 1px rgba(6, 182, 212, 0.12), 0 8px 24px rgba(0, 0, 0, 0.65);
+  --shadow-lift: 0 0 18px rgba(16, 185, 129, 0.25), 0 12px 32px rgba(0, 0, 0, 0.8);
+}
+html.theme-mission body {
+  background-color: var(--bg);
+  background-image:
+    radial-gradient(ellipse 800px 350px at 50% -10%, rgba(16, 185, 129, 0.10), transparent 70%),
+    linear-gradient(rgba(6, 182, 212, 0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(6, 182, 212, 0.03) 1px, transparent 1px);
+  background-size: 100% 100%, 32px 32px, 32px 32px;
+}
+html.theme-mission .sidebar {
+  background: linear-gradient(180deg, #040810 0%, #07101E 100%);
+  border-right: 1px solid rgba(16, 185, 129, 0.25);
+}
+html.theme-mission .tab-btn.side-tab-btn.active {
+  background: linear-gradient(90deg, rgba(16, 185, 129, 0.25), rgba(6, 182, 212, 0.15));
+  color: #34D399;
+  border-left: 3px solid #10B981;
+  box-shadow: 0 0 16px rgba(16, 185, 129, 0.25);
+}
+html.theme-mission .stat-card::before {
+  background: linear-gradient(90deg, #10B981, #06B6D4);
+  height: 3px;
+  opacity: 1;
+}
+html.theme-mission .topbar {
+  background: rgba(7, 13, 24, 0.92);
+  backdrop-filter: blur(12px);
+  border-bottom: 1px solid rgba(16, 185, 129, 0.28);
+}
+
+/* Style 2: Modern Glassento (Apple / Linear Bento Grid) */
+html.theme-glassento {
+  --bg: #080B18;
+  --surface: rgba(22, 29, 52, 0.66);
+  --surface-2: rgba(30, 41, 70, 0.58);
+  --border: rgba(255, 255, 255, 0.12);
+  --ink: #F8FAFC;
+  --ink-soft: #CBD5E1;
+  --ink-faint: #94A3B8;
+  --void: #050711;
+  --navy: #4F46E5;
+  --navy-deep: rgba(12, 16, 33, 0.85);
+  --blue: #6366F1;
+  --blue-soft: rgba(99, 102, 241, 0.18);
+  --pass: #34D399;
+  --pass-bg: rgba(52, 211, 153, 0.16);
+  --fix: #FB7185;
+  --fix-bg: rgba(251, 113, 133, 0.16);
+  --issue: #FBBF24;
+  --issue-bg: rgba(251, 191, 36, 0.16);
+  --wait: #94A3B8;
+  --wait-bg: rgba(148, 163, 184, 0.16);
+  --led: #38BDF8;
+  --led-dim: rgba(56, 189, 248, 0.2);
+  --radius: 22px;
+  --radius-sm: 12px;
+  --shadow: 0 8px 32px rgba(0, 0, 0, 0.38), inset 0 1px 0 rgba(255, 255, 255, 0.12);
+  --shadow-lift: 0 14px 40px rgba(99, 102, 241, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.22);
+}
+html.theme-glassento body {
+  background-color: #070A17;
+  background-image:
+    radial-gradient(circle at 12% 18%, rgba(99, 102, 241, 0.28), transparent 42%),
+    radial-gradient(circle at 88% 15%, rgba(6, 182, 212, 0.22), transparent 42%),
+    radial-gradient(circle at 50% 85%, rgba(168, 85, 247, 0.18), transparent 48%);
+  background-attachment: fixed;
+}
+html.theme-glassento .card,
+html.theme-glassento .stat-card,
+html.theme-glassento .eng-card {
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+}
+html.theme-glassento .sidebar {
+  background: rgba(10, 14, 29, 0.78);
+  backdrop-filter: blur(20px);
+  border-right: 1px solid rgba(255, 255, 255, 0.1);
+}
+html.theme-glassento .topbar {
+  background: rgba(13, 18, 36, 0.72);
+  backdrop-filter: blur(20px);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+html.theme-glassento .tab-btn.side-tab-btn.active {
+  background: linear-gradient(135deg, #6366F1, #06B6D4);
+  color: #fff;
+  box-shadow: 0 6px 20px rgba(99, 102, 241, 0.45);
+}
+html.theme-glassento .stat-card::before {
+  background: linear-gradient(90deg, #6366F1, #EC4899, #06B6D4);
+  height: 3px;
+}
+
+/* Style 4: Minimal Swiss Executive */
+html.theme-swiss {
+  --bg: #FAFAFA;
+  --surface: #FFFFFF;
+  --surface-2: #F4F4F5;
+  --border: #E4E4E7;
+  --ink: #09090B;
+  --ink-soft: #52525B;
+  --ink-faint: #A1A1AA;
+  --void: #09090B;
+  --navy: #18181B;
+  --navy-deep: #09090B;
+  --blue: #18181B;
+  --blue-soft: #F4F4F5;
+  --pass: #059669;
+  --pass-bg: #ECFDF5;
+  --fix: #DC2626;
+  --fix-bg: #FEF2F2;
+  --issue: #D97706;
+  --issue-bg: #FFFBEB;
+  --wait: #71717A;
+  --wait-bg: #F4F4F5;
+  --led: #10B981;
+  --led-dim: rgba(16, 185, 129, 0.15);
+  --radius: 8px;
+  --radius-sm: 6px;
+  --shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
+  --shadow-lift: 0 4px 12px rgba(0, 0, 0, 0.06);
+}
+html.theme-swiss .sidebar {
+  background: #FFFFFF;
+  color: #09090B;
+  border-right: 1px solid #E4E4E7;
+}
+html.theme-swiss .brand-box {
+  border-bottom: 1px solid #E4E4E7;
+}
+html.theme-swiss .brand-title { color: #09090B; letter-spacing: -0.02em; }
+html.theme-swiss .brand-sub { color: #71717A; }
+html.theme-swiss .tab-btn.side-tab-btn { color: #52525B; border-radius: 6px; }
+html.theme-swiss .tab-btn.side-tab-btn:hover { background: #F4F4F5; color: #09090B; }
+html.theme-swiss .tab-btn.side-tab-btn.active {
+  background: #09090B;
+  color: #FFFFFF;
+  box-shadow: none;
+}
+html.theme-swiss .side-footer { border-top: 1px solid #E4E4E7; }
+html.theme-swiss .live-chip,
+html.theme-swiss .user-chip {
+  background: #F4F4F5;
+  border-color: #E4E4E7;
+  color: #09090B;
+}
+html.theme-swiss #themeToggleBtn,
+html.theme-swiss #logoutBtn {
+  color: #09090B !important;
+  border-color: #D4D4D8 !important;
+  background: #F4F4F5 !important;
+}
+html.theme-swiss .stat-card::before {
+  background: #09090B;
+  height: 2px;
+}
+
+/* ===== LIVE WORLD CLOCK BAR ON TOPBAR ===== */
+.world-clock-bar {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 5px 10px;
+  font-size: 12px;
+  flex-wrap: wrap;
+}
+.wc-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 2px 7px;
+  border-radius: 6px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  font-family: var(--mono);
+  font-size: 11.5px;
+  font-weight: 700;
+  color: var(--ink);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+.wc-chip:hover {
+  border-color: var(--blue);
+  transform: translateY(-1px);
+}
+.wc-chip .wc-tag {
+  font-family: var(--sans);
+  font-size: 10px;
+  font-weight: 800;
+  padding: 1px 5px;
+  border-radius: 4px;
+  background: var(--blue-soft);
+  color: var(--blue);
+}
+.wc-chip.wc-thai .wc-tag {
+  background: var(--pass-bg);
+  color: var(--pass);
+}
+.wc-chip.wc-utc .wc-tag {
+  background: var(--issue-bg);
+  color: var(--issue);
+}
+.theme-switcher-select {
+  padding: 6px 10px !important;
+  font-size: 12px !important;
+  font-weight: 700 !important;
+  border-radius: var(--radius-sm) !important;
+  background: var(--surface-2) !important;
+  border: 1px solid var(--border) !important;
+  color: var(--ink) !important;
+  cursor: pointer;
+}
+
+/* ===== WORLD TIME CALCULATOR VIEW ===== */
+.wc-clock-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(185px, 1fr));
+  gap: 12px;
+}
+.wc-live-card {
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 14px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  position: relative;
+  overflow: hidden;
+}
+.wc-live-card.active-zone {
+  border-color: var(--blue);
+  box-shadow: var(--shadow);
+}
+.wc-live-zone {
+  font-size: 11.5px;
+  font-weight: 700;
+  color: var(--ink-soft);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.wc-live-time {
+  font-family: var(--mono);
+  font-size: 24px;
+  font-weight: 800;
+  color: var(--ink);
+  letter-spacing: -0.02em;
+}
+.wc-live-date {
+  font-size: 11px;
+  color: var(--ink-faint);
+}
+.wc-result-hero {
+  background: linear-gradient(135deg, rgba(37, 99, 235, 0.08), rgba(16, 185, 129, 0.08));
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.wc-precheck-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 12px;
+}
+.wc-precheck-box {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.wc-preset-pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.wc-preset-btn {
+  padding: 4px 9px;
+  font-family: var(--mono);
+  font-size: 11.5px;
+  font-weight: 700;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--ink-soft);
+  cursor: pointer;
+  transition: all 0.12s ease;
+}
+.wc-preset-btn:hover {
+  border-color: var(--blue);
+  color: var(--blue);
+  background: var(--blue-soft);
+}
+.rank-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--mono);
+  font-size: 11px;
+  font-weight: 800;
+  padding: 2px 7px;
+  border-radius: 99px;
+  background: var(--blue-soft);
+  color: var(--blue);
+}
+.rank-badge.top-1 { background: rgba(245, 158, 11, 0.18); color: #D97706; }
+.rank-badge.top-2 { background: rgba(148, 163, 184, 0.22); color: #64748B; }
+.rank-badge.top-3 { background: rgba(217, 119, 6, 0.16); color: #B45309; }
+
 </style>
 </head>
 <body>
@@ -657,6 +1005,9 @@ input:focus, select:focus, textarea:focus { outline: 2px solid var(--blue); bord
         <button type="button" class="tab-btn side-tab-btn" data-view="workload">
           ⏱️ ชั่วโมงทำงานวิศวกร <span class="tab-badge-new">NEW</span>
         </button>
+        <button type="button" class="tab-btn side-tab-btn" data-view="worldclock" id="sideTabWorldClockBtn">
+          🌍 คำนวณเวลาโลก <span class="tab-badge-new">UTC/EU</span>
+        </button>
         <button type="button" class="tab-btn side-tab-btn" data-view="entry">
           📝 บันทึกข้อมูล
         </button>
@@ -672,6 +1023,14 @@ input:focus, select:focus, textarea:focus { outline: 2px solid var(--blue); bord
       </nav>
 
       <div class="side-footer">
+        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:6px; margin-bottom:4px;">
+          <button type="button" id="syncAllSportsBtn" class="btn sm sync-btn" title="ดึงข้อมูลกีฬา 1,210 รายการจากชีต คำนวณกราฟ และบันทึกเข้า Firebase" style="padding:7px 6px; font-size:11.5px; justify-content:center; white-space:nowrap;">
+            🔄 ดึงข้อมูล
+          </button>
+          <button type="button" id="clearFirebaseDbBtn" class="btn sm danger" title="ลบข้อมูลทั้งหมดใน Firebase Firestore ให้เป็น 0 ก่อนดึงใหม่" style="padding:7px 6px; font-size:11.5px; justify-content:center; white-space:nowrap; background:rgba(239,68,68,0.16); color:#FCA5A5; border-color:rgba(239,68,68,0.35);">
+            🗑️ ลบข้อมูล
+          </button>
+        </div>
         <div class="live-chip">
           <span class="tally-dot"></span>
           <span id="totalChip">0 feeds logged</span>
@@ -693,14 +1052,31 @@ input:focus, select:focus, textarea:focus { outline: 2px solid var(--blue); bord
         <div class="topbar-left">
           <div class="topbar-title" id="currentViewTitle">📊 ภาพรวมการถ่ายทอดสด (Broadcast Dashboard)</div>
           <span class="sync-pill" id="syncStatusBadge">● พร้อมใช้งาน</span>
+          <div class="world-clock-bar" id="liveWorldClockBar" title="คลิกที่นาฬิกาเพื่อเปิดหน้าโปรแกรมคำนวณเวลาโลก">
+            <span class="wc-chip wc-thai" id="topClockThaiChip">
+              <span class="wc-tag">🇹🇭 THA</span>
+              <span id="topClockThaiVal">--:--:--</span>
+            </span>
+            <span class="wc-chip wc-utc" id="topClockUtcChip">
+              <span class="wc-tag">🌐 UTC</span>
+              <span id="topClockUtcVal">--:--:--</span>
+            </span>
+            <span class="wc-chip" id="topClockCustomChip">
+              <span class="wc-tag" id="topClockCustomTag">🇪🇺 CET</span>
+              <span id="topClockCustomVal">--:--:--</span>
+            </span>
+            <select id="topClockZoneSelect" aria-label="เลือกโซนเวลาที่ 3" style="padding:2px 6px; font-size:11px; border-radius:6px; font-weight:600;">
+              <option value="Europe/Paris" data-short="🇪🇺 CET">🇪🇺 ยุโรปกลาง (CET/CEST)</option>
+              <option value="Europe/London" data-short="🇬🇧 UK">🇬🇧 อังกฤษ (UK GMT/BST)</option>
+              <option value="Europe/Athens" data-short="🇪🇺 EET">🇪🇺 ยุโรปตะวันออก (EET)</option>
+              <option value="Asia/Riyadh" data-short="🇸🇦 KSA">🇸🇦 ซาอุฯ/กาตาร์ (UTC+3)</option>
+              <option value="Asia/Tokyo" data-short="🇯🇵 JST">🇯🇵 ญี่ปุ่น/เกาหลี (UTC+9)</option>
+              <option value="Australia/Sydney" data-short="🇦🇺 AUS">🇦🇺 ออสเตรเลีย (AEDT)</option>
+              <option value="America/New_York" data-short="🇺🇸 US-E">🇺🇸 อเมริกา (EST/EDT)</option>
+            </select>
+          </div>
         </div>
         <div class="topbar-actions">
-          <button type="button" id="clearFirebaseDbBtn" class="btn sm danger" title="ลบข้อมูลทั้งหมดใน Firebase Firestore ให้เป็น 0 ก่อนดึงใหม่">
-            🗑️ ลบฐานข้อมูล Firebase
-          </button>
-          <button type="button" id="syncAllSportsBtn" class="btn sync-btn" title="ดึงข้อมูลกีฬา 1,210 รายการจากชีต คำนวณกราฟ และบันทึกเข้า Firebase">
-            🔄 ดึงข้อมูลกีฬาทั้งหมด (Google Sheet)
-          </button>
           <button type="button" id="quickGoWorkloadBtn" class="btn sm primary">
             ⏱️ ดูชั่วโมงทำงานรายเดือน
           </button>
@@ -1374,13 +1750,332 @@ input:focus, select:focus, textarea:focus { outline: 2px solid var(--blue); bord
         <!-- =========================================================
              VIEW 6: ORIGINAL MANUAL (view-manual)
         ========================================================== -->
+                <!-- =========================================================
+             VIEW 7: WORLD TIME CALCULATOR & BROADCAST CONVERTER (view-worldclock)
+             ========================================================= -->
+        <section id="view-worldclock" class="view">
+          <div class="card" id="worldClockCaptureCard">
+            <div class="card-header">
+              <div>
+                <div class="card-title">🌍 นาฬิกาโลกสำหรับห้องควบคุมการถ่ายทอดสด (Real-time Broadcast World Clocks)</div>
+                <div class="card-sub">เทียบเวลามาตรฐานสากล (UTC), ยุโรป (ปรับ Daylight Saving อัตโนมัติ), เอเชีย และเวลาประเทศไทยแบบวินาทีต่อวินาที</div>
+              </div>
+              <div style="display:flex; gap:8px; align-items:center;">
+                <button type="button" class="icon-btn" id="captureWorldClockBtn" data-html2canvas-ignore="true" title="บันทึกภาพหน้าคำนวณเวลาโลก">📸</button>
+              </div>
+            </div>
+            <div class="wc-clock-grid" id="wcLiveClocksGrid">
+              <div class="wc-live-card active-zone">
+                <div class="wc-live-zone"><span>🇹🇭 เวลาประเทศไทย (ICT)</span><span class="ch-pill">UTC+7</span></div>
+                <div class="wc-live-time" id="wcCardTime_BKK" style="color:var(--pass);">--:--:--</div>
+                <div class="wc-live-date" id="wcCardDate_BKK">-</div>
+              </div>
+              <div class="wc-live-card">
+                <div class="wc-live-zone"><span>🌐 เวลาสากล (UTC / GMT)</span><span class="ch-pill">UTC+0</span></div>
+                <div class="wc-live-time" id="wcCardTime_UTC" style="color:var(--issue);">--:--:--</div>
+                <div class="wc-live-date" id="wcCardDate_UTC">-</div>
+              </div>
+              <div class="wc-live-card">
+                <div class="wc-live-zone"><span>🇬🇧 อังกฤษ (London UK)</span><span class="ch-pill" id="wcCardOffset_LON">GMT/BST</span></div>
+                <div class="wc-live-time" id="wcCardTime_LON">--:--:--</div>
+                <div class="wc-live-date" id="wcCardDate_LON">-</div>
+              </div>
+              <div class="wc-live-card">
+                <div class="wc-live-zone"><span>🇪🇺 ยุโรปกลาง (CET/CEST)</span><span class="ch-pill" id="wcCardOffset_PAR">CET</span></div>
+                <div class="wc-live-time" id="wcCardTime_PAR">--:--:--</div>
+                <div class="wc-live-date" id="wcCardDate_PAR">-</div>
+              </div>
+              <div class="wc-live-card">
+                <div class="wc-live-zone"><span>🇸🇦 ตะวันออกกลาง (Riyadh)</span><span class="ch-pill">UTC+3</span></div>
+                <div class="wc-live-time" id="wcCardTime_RUH">--:--:--</div>
+                <div class="wc-live-date" id="wcCardDate_RUH">-</div>
+              </div>
+              <div class="wc-live-card">
+                <div class="wc-live-zone"><span>🇯🇵 ญี่ปุ่น / เกาหลี (JST)</span><span class="ch-pill">UTC+9</span></div>
+                <div class="wc-live-time" id="wcCardTime_TYO">--:--:--</div>
+                <div class="wc-live-date" id="wcCardDate_TYO">-</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Single Match Time Converter + Pre-check Calculator -->
+          <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(400px, 1fr)); gap:18px;">
+            <div class="card" id="wcSingleCalcCard">
+              <div class="card-header">
+                <div>
+                  <div class="card-title">⚡ โปรแกรมแปลงเวลาถ่ายทอดสดเป็นเวลาไทย (UTC / ยุโรป ➔ เวลาไทย)</div>
+                  <div class="card-sub">เพียงใส่วันที่และเวลาจากคิวถ่ายทอดสดต่างประเทศ ระบบจะคำนวณเวลาไทยและเวลาเข้ากะเตรียมงานให้ทันที</div>
+                </div>
+                <button type="button" class="btn sm" id="wcUseNowBtn">🕒 ใช้เวลาปัจจุบัน</button>
+              </div>
+
+              <div style="display:flex; flex-direction:column; gap:14px;">
+                <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(160px, 1fr)); gap:12px;">
+                  <div>
+                    <label style="font-size:12px; font-weight:700; color:var(--ink-soft); display:block; margin-bottom:5px;">1. วันที่แข่งขัน (ตามเวลาต้นทาง)</label>
+                    <input type="date" id="wcInputDate" style="width:100%; font-family:var(--mono); font-weight:700;">
+                  </div>
+                  <div>
+                    <label style="font-size:12px; font-weight:700; color:var(--ink-soft); display:block; margin-bottom:5px;">2. เวลาต้นทาง (24 ชั่วโมง)</label>
+                    <input type="time" id="wcInputTime" value="20:00" style="width:100%; font-family:var(--mono); font-size:15px; font-weight:800;">
+                  </div>
+                </div>
+
+                <div>
+                  <div style="font-size:11.5px; color:var(--ink-soft); margin-bottom:6px; font-weight:600;">กดเลือกเวลาคิกออฟยอดฮิตด่วน:</div>
+                  <div class="wc-preset-pills">
+                    <button type="button" class="wc-preset-btn" data-wctime="12:30">12:30</button>
+                    <button type="button" class="wc-preset-btn" data-wctime="14:00">14:00</button>
+                    <button type="button" class="wc-preset-btn" data-wctime="15:00">15:00</button>
+                    <button type="button" class="wc-preset-btn" data-wctime="17:30">17:30</button>
+                    <button type="button" class="wc-preset-btn" data-wctime="18:45">18:45</button>
+                    <button type="button" class="wc-preset-btn" data-wctime="19:45">19:45</button>
+                    <button type="button" class="wc-preset-btn" data-wctime="20:00">20:00</button>
+                    <button type="button" class="wc-preset-btn" data-wctime="21:00">21:00</button>
+                    <button type="button" class="wc-preset-btn" data-wctime="22:00">22:00</button>
+                    <button type="button" class="wc-preset-btn" data-wctime="00:00">00:00</button>
+                    <button type="button" class="wc-preset-btn" data-wctime="02:00">02:00</button>
+                  </div>
+                </div>
+
+                <div style="display:grid; grid-template-columns:1fr auto 1fr; gap:10px; align-items:end;">
+                  <div>
+                    <label style="font-size:12px; font-weight:700; color:var(--ink-soft); display:block; margin-bottom:5px;">3. โซนเวลาต้นทาง (Source Zone)</label>
+                    <select id="wcSourceZone" style="width:100%; font-weight:700;">
+                      <option value="UTC">🌐 UTC / GMT (เวลามาตรฐานสากล +0)</option>
+                      <option value="Europe/Paris" selected>🇪🇺 ยุโรปกลาง CET/CEST (สเปน/เยอรมนี/อิตาลี/ฝรั่งเศส)</option>
+                      <option value="Europe/London">🇬🇧 อังกฤษ UK GMT/BST (พรีเมียร์ลีก / ลอนดอน)</option>
+                      <option value="Europe/Athens">🇪🇺 ยุโรปตะวันออก EET/EEST (กรีซ/ตุรกี/โรมาเนีย)</option>
+                      <option value="Asia/Riyadh">🇸🇦 ซาอุฯ / กาตาร์ / UAE (AST UTC+3)</option>
+                      <option value="Asia/Tokyo">🇯🇵 ญี่ปุ่น / เกาหลี (JST/KST UTC+9)</option>
+                      <option value="Asia/Shanghai">🇨🇳 จีน / สิงคโปร์ / มาเลเซีย (CST UTC+8)</option>
+                      <option value="Australia/Sydney">🇦🇺 ออสเตรเลีย ซิดนีย์/เมลเบิร์น (AEST/AEDT)</option>
+                      <option value="America/New_York">🇺🇸 อเมริกาตะวันออก นิวยอร์ก (EST/EDT)</option>
+                      <option value="America/Los_Angeles">🇺🇸 อเมริกาตะวันตก ลอสแอนเจลิส (PST/PDT)</option>
+                      <option value="Asia/Bangkok">🇹🇭 ประเทศไทย (ICT UTC+7 — แปลงย้อนกลับ)</option>
+                    </select>
+                  </div>
+                  <button type="button" class="btn sm" id="wcSwapZoneBtn" title="สลับโซนเวลาต้นทางกับปลายทาง" style="height:36px;">⇄ สลับ</button>
+                  <div>
+                    <label style="font-size:12px; font-weight:700; color:var(--ink-soft); display:block; margin-bottom:5px;">4. แปลงเป็นโซนเวลา (Target Zone)</label>
+                    <select id="wcTargetZone" style="width:100%; font-weight:700;">
+                      <option value="Asia/Bangkok" selected>🇹🇭 เวลาประเทศไทย (ICT UTC+7)</option>
+                      <option value="UTC">🌐 UTC / GMT (เวลามาตรฐานสากล +0)</option>
+                      <option value="Europe/Paris">🇪🇺 ยุโรปกลาง CET/CEST (ปารีส/เบอร์ลิน/มาดริด)</option>
+                      <option value="Europe/London">🇬🇧 อังกฤษ UK GMT/BST (ลอนดอน)</option>
+                      <option value="Asia/Tokyo">🇯🇵 ญี่ปุ่น / เกาหลี (JST UTC+9)</option>
+                      <option value="America/New_York">🇺🇸 อเมริกาตะวันออก (EST/EDT)</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div>
+                  <label style="font-size:12px; font-weight:700; color:var(--ink-soft); display:block; margin-bottom:5px;">ชื่อคู่แข่งขัน / ช่องรายการ (ระบุหรือไม่ก็ได้ เพื่อใช้คัดลอกสรุปคิวงาน)</label>
+                  <input type="text" id="wcInputMatchTitle" placeholder="เช่น UCL: Real Madrid vs AC Milan (PLAY SPORTS 1)" style="width:100%;">
+                </div>
+              </div>
+            </div>
+
+            <!-- Conversion Result & Engineer Pre-check Box -->
+            <div class="card">
+              <div class="card-header">
+                <div>
+                  <div class="card-title">🎯 ผลลัพธ์เวลาประเทศไทย &amp; เวลาเข้ากะเตรียมงานวิศวกร</div>
+                  <div class="card-sub">คำนวณความต่างชั่วโมงและแจ้งเตือนกรณีข้ามเที่ยงคืนเป็นวันถัดไปอัตโนมัติ</div>
+                </div>
+                <button type="button" class="btn sm primary" id="wcCopyResultBtn">📋 คัดลอกสรุปเวลา</button>
+              </div>
+
+              <div class="wc-result-hero">
+                <div style="display:flex; justify-content:space-between; align-items:flex-start; flex-wrap:wrap; gap:10px;">
+                  <div>
+                    <div style="font-size:12px; font-weight:700; color:var(--ink-soft);" id="wcResultTargetLabel">🇹🇭 เวลาออกอากาศในประเทศไทย (Asia/Bangkok)</div>
+                    <div style="font-family:var(--mono); font-size:38px; font-weight:800; color:var(--blue); line-height:1.15; margin-top:4px;" id="wcResultMainTime">02:00 น.</div>
+                    <div style="font-size:13.5px; font-weight:700; color:var(--ink); margin-top:4px;" id="wcResultMainDate">-</div>
+                  </div>
+                  <div style="display:flex; flex-direction:column; align-items:flex-end; gap:6px;">
+                    <span class="badge Pass" id="wcResultDayDiffBadge" style="font-size:12px; padding:5px 11px;">🌙 ข้ามคืน (+1 วันในไทย)</span>
+                    <span class="ch-pill" id="wcResultHourDiffLabel">ห่างกัน +6 ชั่วโมง</span>
+                  </div>
+                </div>
+
+                <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(125px, 1fr)); gap:8px; padding-top:10px; border-top:1px dashed var(--border); font-size:12px;">
+                  <div><span style="color:var(--ink-soft);">🇹🇭 เวลาไทย (ICT):</span> <strong style="font-family:var(--mono);" id="wcQuickBkk">--:--</strong></div>
+                  <div><span style="color:var(--ink-soft);">🌐 เวลาสากล (UTC):</span> <strong style="font-family:var(--mono);" id="wcQuickUtc">--:--</strong></div>
+                  <div><span style="color:var(--ink-soft);">🇬🇧 อังกฤษ (UK):</span> <strong style="font-family:var(--mono);" id="wcQuickLon">--:--</strong></div>
+                  <div><span style="color:var(--ink-soft);">🇪🇺 ยุโรปกลาง (CET):</span> <strong style="font-family:var(--mono);" id="wcQuickPar">--:--</strong></div>
+                </div>
+
+                <div>
+                  <div style="font-size:12px; font-weight:700; color:var(--ink); margin-bottom:8px;">⏱️ เวลาวิศวกรต้องเข้ากะเตรียมสัญญาณ (Pre-check Standby Time ตามเวลาไทย):</div>
+                  <div class="wc-precheck-grid">
+                    <div class="wc-precheck-box">
+                      <span style="font-size:11px; font-weight:700; color:var(--ink-soft);">🌍 กีฬาต่างประเทศ / เทนนิส / F1 (-2 ชม.)</span>
+                      <span style="font-family:var(--mono); font-size:20px; font-weight:800; color:var(--pass);" id="wcPrecheckIntl">00:00 น.</span>
+                      <span style="font-size:11px; color:var(--ink-faint);" id="wcPrecheckIntlDate">-</span>
+                    </div>
+                    <div class="wc-precheck-box">
+                      <span style="font-size:11px; font-weight:700; color:var(--ink-soft);">⚽ ฟุตบอลไทยลีก / ในประเทศ (-4 ชม.)</span>
+                      <span style="font-family:var(--mono); font-size:20px; font-weight:800; color:var(--blue);" id="wcPrecheckThai">22:00 น.</span>
+                      <span style="font-size:11px; color:var(--ink-faint);" id="wcPrecheckThaiDate">-</span>
+                    </div>
+                    <div class="wc-precheck-box">
+                      <span style="font-size:11px; font-weight:700; color:var(--ink-soft);">🏅 เอเชียนเกมส์ / มหกรรมกีฬา (-1 ชม.)</span>
+                      <span style="font-family:var(--mono); font-size:20px; font-weight:800; color:var(--issue);" id="wcPrecheckAsian">01:00 น.</span>
+                      <span style="font-size:11px; color:var(--ink-faint);" id="wcPrecheckAsianDate">-</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Batch Schedule Converter & 24-Hour Comparison Table -->
+          <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(420px, 1fr)); gap:18px;">
+            <div class="card">
+              <div class="card-header">
+                <div>
+                  <div class="card-title">📋 แปลงตารางเวลาแข่งขันหลายคู่พร้อมกัน (Batch Time Converter ➔ เวลาไทย)</div>
+                  <div class="card-sub">วางรายการที่มีเวลา (เช่น <code>19:45 Arsenal vs Chelsea</code> หรือ <code>20:00 Real Madrid vs Milan</code>) ระบบจะแปลงทุกบรรทัดเป็นเวลาไทยทันที</div>
+                </div>
+                <button type="button" class="btn sm" id="wcRunBatchBtn">⚡ แปลงทุกบรรทัด</button>
+              </div>
+              <textarea id="wcBatchInput" rows="5" style="width:100%; font-family:var(--mono); font-size:12.5px; margin-bottom:12px;" placeholder="ตัวอย่าง:&#10;18:45 Barcelona vs Bayern Munich&#10;20:00 Liverpool vs Real Madrid&#10;21:00 Manchester City vs Inter Milan"></textarea>
+              <div class="table-wrap" style="max-height:260px; overflow-y:auto;">
+                <table class="data-table">
+                  <thead>
+                    <tr>
+                      <th>เวลาต้นทาง</th>
+                      <th>รายการ / คู่แข่งขัน</th>
+                      <th>🇹🇭 เวลาออกอากาศไทย</th>
+                      <th>⏱️ เข้าเตรียมงาน (-2 ชม.)</th>
+                    </tr>
+                  </thead>
+                  <tbody id="wcBatchTableBody"></tbody>
+                </table>
+              </div>
+            </div>
+
+            <div class="card">
+              <div class="card-header">
+                <div>
+                  <div class="card-title">🕒 ตารางเทียบเวลา 24 ชั่วโมง (24-Hour Quick Reference Matrix)</div>
+                  <div class="card-sub">เทียบทุกชั่วโมงของโซนต้นทางที่เลือก กับเวลาไทย (ICT) และเวลาสากล (UTC)</div>
+                </div>
+              </div>
+              <div class="table-wrap" style="max-height:360px; overflow-y:auto;">
+                <table class="data-table">
+                  <thead>
+                    <tr>
+                      <th id="wcMatrixSourceHeader">เวลาต้นทาง</th>
+                      <th>🌐 เวลาสากล (UTC)</th>
+                      <th>🇹🇭 เวลาไทย (ICT +7)</th>
+                      <th>⏱️ สแตนด์บาย (-2 ชม.)</th>
+                    </tr>
+                  </thead>
+                  <tbody id="wcMatrixTableBody"></tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </section>
+
         <section id="view-manual" class="view">
-          <div class="card">
-            <div class="card-title" style="margin-bottom:10px;">📖 คู่มือการใช้งานระบบ Live Event Report Manager &amp; Engineer Workload</div>
-            <div style="font-size:13.5px; line-height:1.7; color:var(--ink-soft); display:flex; flex-direction:column; gap:10px;">
-              <p><strong>1. ปุ่ม 🗑️ ลบฐานข้อมูล Firebase:</strong> ล้างข้อมูลทั้งหมดในคอลเลกชัน <code>feeds</code> และ <code>reports</code> บน Firebase Firestore รวมถึงในเครื่องให้เป็น 0 รายการทันที</p>
-              <p><strong>2. ปุ่ม 🔄 ดึงข้อมูลกีฬาทั้งหมด (Google Sheet):</strong> ดึงข้อมูลตารางถ่ายทอดสดทั้ง 1,210 รายการ แปลงวันที่และเวลาให้อยู่ในมาตรฐาน ISO (<code>YYYY-MM-DD</code>) อัตโนมัติ คำนวณกราฟทุกหน้าทันที และบันทึกขึ้น Firebase Firestore</p>
-              <p><strong>3. มุมมองรายสัปดาห์ (Weekly Filter) &amp; กราฟแยกตาม Channel:</strong> กดสลับดู <code>รายสัปดาห์</code> พร้อมปุ่มเลื่อนสัปดาห์ และกราฟด้านขวาแสดงสัดส่วนแยกตาม <code>Channel</code> จริง พร้อมปุ่ม <code>📸</code> บันทึกรูปภาพแยกทุกกราฟ</p>
+          <div class="card" style="margin-bottom:16px;">
+            <div class="card-header">
+              <div>
+                <div class="card-title" style="font-size:18px;">📖 คู่มือการใช้งานระบบ LIVE EVENT REPORT MANAGER &amp; ENGINEER OPERATIONS (ฉบับสมบูรณ์)</div>
+                <div class="card-sub">ระบบบริหารจัดการตารางถ่ายทอดสดกีฬา ติดตามสถานะสัญญาณ คำนวณชั่วโมงงานวิศวกร และแปลงเวลาโลกสำหรับห้องควบคุม MCR</div>
+              </div>
+              <button type="button" class="btn sm" onclick="window.print()">🖨️ พิมพ์คู่มือ</button>
+            </div>
+            <p style="font-size:13.5px; line-height:1.7; color:var(--ink-soft);">
+              ระบบนี้ออกแบบมาเพื่อรองรับการดำเนินงานถ่ายทอดสดสัญญาณกีฬา (AIS PLAY / ถ่ายทอดสดผ่านช่องสัญญาณดาวเทียมและดิจิทัล) ทำงานร่วมกับฐานข้อมูลสเปรดชีตหลัก <strong>AIS_PLAY_Engineer_Resource_Precheck_Template.xlsx</strong> (Google Drive ID: <code>1zqMGz59AVSDI8rvxVQdIY1OKrWTamQpo</code>) และฐานข้อมูลคลาวด์เรียลไทม์ <strong>Google Firebase Firestore</strong> (โปรเจกต์: <code>live-event-report</code>) เพื่อให้ทีมวิศวกรและหัวหน้าทีมสามารถตรวจสอบเวรปฏิบัติงาน คำนวณชั่วโมงงานต่อเนื่อง และออกรายงานได้อย่างถูกต้องแม่นยำ
+            </p>
+          </div>
+
+          <!-- Section 1 & 2: Database Sync & Topbar World Clock -->
+          <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(420px, 1fr)); gap:16px; margin-bottom:16px;">
+            <div class="card">
+              <div class="card-title" style="margin-bottom:8px; color:var(--blue);">1. 🔄 การเชื่อมต่อและจัดการฐานข้อมูล (Database &amp; Sync Control)</div>
+              <div style="font-size:13px; line-height:1.7; color:var(--ink-soft); display:flex; flex-direction:column; gap:8px;">
+                <p><strong>• 🔄 ปุ่มดึงข้อมูล (Google Sheet):</strong> อยู่ที่มุมซ้ายล่างของแถบเมนู (ฝั่งซ้าย) เมื่อกดระบบจะเชื่อมต่อไปยังไฟล์สเปรดชีตต้นทางผ่าน Google Visualization API (และซิงก์ตรงกับไฟล์ Excel 1,210 รายการ) เพื่อดึงข้อมูลตารางแข่งขัน วันที่ เวลา ช่อง และรายชื่อวิศวกรที่มอบหมาย พร้อมแปลงวันที่ <code>01-Sep-2026</code> เป็นมาตรฐาน ISO <code>2026-09-01</code> และแปลงเวลาให้อัตโนมัติ จากนั้นจะอัปโหลดบันทึกเข้า Firebase Firestore ทันที</p>
+                <p><strong>• 🗑️ ปุ่มลบข้อมูล (Firebase):</strong> อยู่ที่มุมซ้ายล่าง (ฝั่งขวา ติดกับปุ่มดึงข้อมูล) ใช้สำหรับล้างข้อมูลในคอลเลกชัน <code>feeds</code> และ <code>reports</code> ใน Firebase ให้เป็น 0 ทั้งหมด เหมาะสำหรับกรณีที่ต้องการเคลียร์ข้อมูลเก่าที่ค้างอยู่ก่อนที่จะกดดึงข้อมูลชุดใหม่ มีกล่องยืนยันป้องกันการเผลอกดโดน</p>
+                <p><strong>• 🟢 ป้าย Feeds Logged &amp; สถานะผู้ใช้งาน:</strong> แสดงจำนวนรายการฟีดกีฬาที่บันทึกอยู่ในหน่วยความจำปัจจุบันแบบเรียลไทม์ พร้อมแสดงอีเมลของผู้ที่กำลังเข้าสู่ระบบ</p>
+                <p><strong>• ⚙️ ระบบ Auto-Sync ผ่าน GitHub Actions:</strong> มีเวิร์กโฟลว์ <code>sync-sheets.yml</code> รันอัตโนมัติทุกชั่วโมงเพื่อดึงไฟล์ <code>.xlsx</code> เข้า Firestore โดยมีระบบสำรอง (Fallback) ผ่าน Firestore REST API แม้ไม่มี Service Account Key ก็ซิงก์ได้</p>
+              </div>
+            </div>
+
+            <div class="card">
+              <div class="card-title" style="margin-bottom:8px; color:var(--pass);">2. 🌐 นาฬิกาโลกบนหัวเว็บ (Live World Clock Bar)</div>
+              <div style="font-size:13px; line-height:1.7; color:var(--ink-soft); display:flex; flex-direction:column; gap:8px;">
+                <p><strong>• 🇹🇭 THA (เวลาประเทศไทย UTC+7):</strong> แสดงเวลามาตรฐานประเทศไทยแบบวินาทีต่อวินาที ใช้เป็นเวลาอ้างอิงหลักในการเริ่มถ่ายทอดสดและเวลาเข้ากะของวิศวกร</p>
+                <p><strong>• 🌐 UTC (เวลามาตรฐานสากล UTC+0):</strong> แสดงเวลาสากลที่มักใช้ระบุในคิวตารางการแข่งขันต่างประเทศ เช่น UEFA, FIFA, F1, เทนนิสแกรนด์สแลม</p>
+                <p><strong>• 🇪🇺 โซนเวลาที่ 3 (สลับดูเองได้ตามใจชอบ):</strong> มีดรอปดาวน์ให้เลือกเปลี่ยนโซนเวลาปลายทางได้ทันที เช่น <em>ยุโรปกลาง (CET/CEST ปารีส/มาดริด/เบอร์ลิน)</em>, <em>อังกฤษ (UK ลอนดอน)</em>, <em>ยุโรปตะวันออก (EET)</em>, <em>ซาอุฯ/ตะวันออกกลาง (KSA)</em>, <em>ญี่ปุ่น/เกาหลี (JST)</em>, <em>ออสเตรเลีย (AUS)</em> และ <em>อเมริกา (US-E)</em> โดยระบบปรับเวลาหน้าร้อน/หน้าหนาว (Daylight Saving Time) ให้อัตโนมัติ</p>
+                <p><strong>• 👆 ทางลัดคลิกเปิดโปรแกรมคำนวณ:</strong> คลิกที่แถบนาฬิกาชิปใดก็ได้ จะกระโดดไปเปิดหน้า <strong>🌍 คำนวณเวลาโลก</strong> ทันที</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Section 3 & 4: Dashboard & Workload Analytics -->
+          <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(420px, 1fr)); gap:16px; margin-bottom:16px;">
+            <div class="card">
+              <div class="card-title" style="margin-bottom:8px; color:var(--blue);">3. 📊 หน้าภาพรวมการถ่ายทอดสด (Dashboard Overview)</div>
+              <div style="font-size:13px; line-height:1.7; color:var(--ink-soft); display:flex; flex-direction:column; gap:8px;">
+                <p><strong>• การ์ดสถิติ 5 ช่อง (Bento KPI Cards):</strong> สรุปยอดรายการทั้งหมด (Total), ปกติ/ผ่านตรวจ (Pass), แก้ไขแล้ว (Fix), พบปัญหา (Issue) และรอดำเนินการ (Wait) พร้อมมีเอฟเฟกต์ยกตัวลอย (Hover Glow) และเส้นสี Gradient ด้านบน</p>
+                <p><strong>• สลับช่วงเวลาดูข้อมูล (Period Filter):</strong> เลือกดูได้ทั้ง <em>รวมทั้งหมด (All)</em>, <em>รายวัน (Daily)</em>, <em>รายสัปดาห์ (Weekly)</em> พร้อมปุ่มเลื่อนสัปดาห์ <code>◀</code> และ <code>▶</code> หรือเลือกดูเฉพาะเดือน <em>ก.ย., ต.ค., พ.ย. 2026</em></p>
+                <p><strong>• กราฟแนวโน้มรายวัน (Chart by Date):</strong> แสดงจำนวนสถานะแยกตามวัน สลับรูปแบบกราฟได้ 3 แบบ (Stacked Bar, Line, Area Chart)</p>
+                <p><strong>• กราฟสัดส่วนแยกตาม Channel:</strong> แสดง 12 ช่องสัญญาณหลักที่มีรายการแข่งขันสูงสุด สลับดูแบบแนวนอน (Horizontal Bar), Donut Chart หรือ Polar Area ได้</p>
+                <p><strong>• 📸 ปุ่มถ่ายภาพกราฟและสถิติ:</strong> ทุกการ์ดกราฟและการ์ดตัวเลขมีปุ่มกล้องถ่ายรูป <code>📸</code> ที่มุมขวาบน กดเพื่อบันทึกเป็นไฟล์ภาพ PNG คมชัดสูงสำหรับส่งเข้ากลุ่มแชต LINE/Teams ได้ทันที</p>
+              </div>
+            </div>
+
+            <div class="card">
+              <div class="card-title" style="margin-bottom:8px; color:var(--issue);">4. ⏱️ ระบบคำนวณชั่วโมงงานวิศวกร (Workload &amp; Shift Analytics)</div>
+              <div style="font-size:13px; line-height:1.7; color:var(--ink-soft); display:flex; flex-direction:column; gap:8px;">
+                <p><strong>• กฎการคำนวณเวลาเข้ากะ (Pre-check Shift Rules):</strong></p>
+                <ul style="padding-left:18px; margin:2px 0;">
+                  <li><strong>ฟุตบอลไทยลีก / กีฬาในประเทศ:</strong> เริ่มเข้างานเตรียมสัญญาณล่วงหน้า <strong>4 ชั่วโมง</strong> ก่อนคิกออฟ</li>
+                  <li><strong>กีฬาต่างประเทศ (พรีเมียร์ลีก, ลาลีกา, UCL, เทนนิส, F1):</strong> เริ่มเตรียมงานล่วงหน้า <strong>2 ชั่วโมง</strong> ก่อนเริ่มแข่ง</li>
+                  <li><strong>เอเชียนเกมส์ / มหกรรมกีฬา:</strong> เริ่มเตรียมงานล่วงหน้า <strong>1 ชั่วโมง</strong></li>
+                </ul>
+                <p><strong>• การคิดกะกลางวัน (Day Shift) vs กะดึก (Night Shift):</strong> กะกลางวันคืองานที่สิ้นสุดก่อน 24:00 น. ส่วนงานที่เริ่มหลังเที่ยงคืนหรือกินเวลาข้ามคืนจะถูกจัดเป็นกะดึกเพื่อใช้คำนวณเบี้ยเลี้ยง/OT</p>
+                <p><strong>• 5 แถบย่อยในหน้าชั่วโมงทำงาน:</strong></p>
+                <ul style="padding-left:18px; margin:2px 0;">
+                  <li><strong>1. สรุปชั่วโมงรายเดือน:</strong> การ์ดจัดอันดับ 10 วิศวกร (มีเหรียญรางวัล 🥇 #1, 🥈 #2, 🥉 #3), กราฟเปรียบเทียบกะ Day vs Night, ตารางสรุปยอด และปุ่ม Export Excel</li>
+                  <li><strong>2. แนวโน้มรายเดือน:</strong> กราฟเปรียบเทียบชั่วโมงสะสม 3 เดือน (ก.ย.–พ.ย. 2026)</li>
+                  <li><strong>3. ตารางกะรายวัน (Continuous Shift):</strong> แถบ Gantt ไทม์ไลน์ 24 ชั่วโมง (แกน 04:00 ถึง 04:00+1) คำนวณเวลาทำงานยาวต่อเนื่องตั้งแต่นาทีแรกที่เตรียมฟีดแรกจนจบคู่สุดท้ายของวัน</li>
+                  <li><strong>4. แจกแจงตามฟีดกีฬา:</strong> แถบไทม์ไลน์และตารางแยกตามช่องและลีกกีฬา แยกสีช่วงเตรียมงานกับช่วงแข่งสดชัดเจน</li>
+                  <li><strong>5. ค้นหาแมตช์รายบุคคล:</strong> ค้นหาประวัติการทำงานของวิศวกรแต่ละท่านแบบเจาะลึก</li>
+                </ul>
+              </div>
+            </div>
+          </div>
+
+          <!-- Section 5 & 6: World Time Calculator & Data Entry -->
+          <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(420px, 1fr)); gap:16px;">
+            <div class="card">
+              <div class="card-title" style="margin-bottom:8px; color:var(--pass);">5. 🌍 โปรแกรมคำนวณเวลาโลก (Broadcast World Time Calculator)</div>
+              <div style="font-size:13px; line-height:1.7; color:var(--ink-soft); display:flex; flex-direction:column; gap:8px;">
+                <p><strong>• แผงนาฬิกาถ่ายทอดสด 6 โซนหลัก:</strong> แสดงเวลาเดินจริงพร้อมวันที่ของ <em>ไทย (ICT), สากล (UTC), อังกฤษ (London), ยุโรปกลาง (Paris/CET), ตะวันออกกลาง (Riyadh)</em> และ <em>ญี่ปุ่น (Tokyo)</em></p>
+                <p><strong>• เครื่องมือแปลงเวลาด่วน (Quick Converter):</strong> ใส่วันที่ เวลา และเลือกโซนต้นทาง (เช่น ยุโรป 20:00) ระบบจะแปลงเป็นเวลาไทยทันที พร้อมปุ่มลัดเวลาคิกออฟยอดนิยม (12:30, 15:00, 19:45, 20:00, 02:00 น.)</p>
+                <p><strong>• แจ้งเตือนข้ามเที่ยงคืน (+1 วันในไทย):</strong> แจ้งเตือนด้วยป้ายสีส้มชัดเจนหากคู่แข่งขันเตะดึกจนข้ามเป็นวันถัดไปในเวลาไทย ป้องกันวิศวกรจำวันผิด</p>
+                <p><strong>• คำนวณเวลาเข้ากะเตรียมงานล่วงหน้า:</strong> แสดงเวลาสแตนด์บาย 3 ระดับ (-2 ชม. กีฬาตปท., -4 ชม. ไทยลีก, -1 ชม. เอเชียนเกมส์) ตามเวลาไทยให้เสร็จสรรพ</p>
+                <p><strong>• แปลงตารางแข่งหลายคู่พร้อมกัน (Batch Converter):</strong> สามารถ Copy ตารางเวลาหลายๆ บรรทัดจากต่างประเทศมาวางในกล่องข้อความ ระบบจะแปลงเป็นเวลาไทยและเวลาสแตนด์บายของทุกคู่ในคราวเดียว</p>
+                <p><strong>• ตารางเทียบเวลา 24 ชั่วโมง (24-Hour Matrix):</strong> ตารางเปรียบเทียบชั่วโมงต่อชั่วโมง (00:00–23:00) ระหว่างโซนต้นทางที่เลือก กับเวลา UTC และเวลาไทย</p>
+              </div>
+            </div>
+
+            <div class="card">
+              <div class="card-title" style="margin-bottom:8px; color:var(--blue);">6. 📝 การบันทึกข้อมูล, นำเข้า และออกรายงาน (Entry, Import &amp; Report)</div>
+              <div style="font-size:13px; line-height:1.7; color:var(--ink-soft); display:flex; flex-direction:column; gap:8px;">
+                <p><strong>• ฟอร์มบันทึกข้อมูลเดี่ยว:</strong> เพิ่มหรือแก้ไขรายการแข่งขัน ระบุวันที่ เวลา ช่อง Media ID สถานะ (Pass/Fix/Issue/Wait) และเลือกรายชื่อวิศวกรผู้รับผิดชอบ</p>
+                <p><strong>• นำเข้าข้อมูลจำนวนมาก (Bulk Paste):</strong> รองรับการคัดลอกจาก Google Sheets หรือ Excel ในรูปแบบคอลัมน์ Tab-Separated มาวางเพื่อบันทึกครั้งละหลายสิบรายการ</p>
+                <p><strong>• ส่งออกข้อมูล (Export):</strong> รองรับการดาวน์โหลดตารางออกเป็นไฟล์ <strong>Excel (.xlsx)</strong> และ <strong>CSV</strong> พร้อมสูตรสรุป</p>
+                <p><strong>• ถังขยะกู้คืนข้อมูล (Trash):</strong> รายการที่ถูกลบจะไม่หายไปทันที สามารถเข้ามาตรวจสอบและกู้คืน (Restore) หรือลบถาวรได้</p>
+                <p><strong>• ออกรายงานประจำวัน (Shift Report):</strong> มีฟังก์ชันสร้างข้อความสรุปกะประจำวันตามรูปแบบทางการ พร้อมปุ่มคลิกเดียวคัดลอกลง Clipboard เพื่อส่งรายงานหัวหน้างาน</p>
+                <p><strong>• สลับโหมดมืด/สว่าง (Dark / Light Mode):</strong> รองรับการปรับโทนสี Dark Mode แท้ระดับ OLED ที่สบายตา ช่วยลดแสงสะท้อนในห้อง MCR</p>
+              </div>
             </div>
           </div>
         </section>
@@ -2336,14 +3031,21 @@ function renderWorkloadModule() {
   document.getElementById("wkStatAvgDay").textContent = sumDays > 0 ? `${(sumTotal / sumDays).toFixed(1)} ชม.` : "0.0 ชม.";
 
   const maxEngHrs = Math.max(1, ...statsByEng.map(x => x.totalHrs));
+  const sortedForRank = [...statsByEng].sort((a, b) => b.totalHrs - a.totalHrs);
+  const rankMap = {};
+  sortedForRank.forEach((item, idx) => { rankMap[item.eng] = idx + 1; });
+
   document.getElementById("engineerCardsGrid").innerHTML = statsByEng.map(st => {
     const dayPct = Math.round((st.dayHrs / maxEngHrs) * 100);
     const nightPct = Math.round((st.nightHrs / maxEngHrs) * 100);
     const avg = st.activeDays > 0 ? (st.totalHrs / st.activeDays).toFixed(1) : "0.0";
+    const rnk = rankMap[st.eng] || 10;
+    const medal = rnk === 1 ? "🥇 #1" : rnk === 2 ? "🥈 #2" : rnk === 3 ? "🥉 #3" : `#${rnk}`;
+    const rnkClass = rnk <= 3 ? `top-${rnk}` : "";
     return `
       <div class="eng-card" data-jumpeng="${st.eng}">
-        <div style="display:flex; justify-content:space-between; align-items:center;">
-          <strong style="font-size:14px;">👨‍💻 ${st.eng}</strong>
+        <div style="display:flex; justify-content:space-between; align-items:center; gap:6px;">
+          <strong style="font-size:13.5px; display:flex; align-items:center; gap:6px;"><span class="rank-badge ${rnkClass}">${medal}</span> ${st.eng}</strong>
           <span style="font-family:var(--mono); font-size:15px; font-weight:800; color:var(--blue);">${st.totalHrs.toFixed(1)} ชม.</span>
         </div>
         <div class="eng-bar-bg">
@@ -3154,6 +3856,7 @@ window.addEventListener("DOMContentLoaded", () => {
   const viewTitles = {
     dashboard: "📊 ภาพรวมการถ่ายทอดสด (Broadcast Dashboard)",
     workload: "⏱️ ชั่วโมงทำงานและตารางกะวิศวกร (Engineer Workload & Shift Analytics)",
+    worldclock: "🌍 นาฬิกาโลกและโปรแกรมแปลงเวลาถ่ายทอดสด (Broadcast World Time Calculator)",
     entry: "📝 บันทึกและจัดการข้อมูลฟีด (Data Entry & Management)",
     report: "📄 ออกรายงานสรุปประจำสัปดาห์/วัน (Broadcast Report)",
     trash: "🗑️ ถังขยะ (Trash)",
@@ -3338,12 +4041,343 @@ window.addEventListener("DOMContentLoaded", () => {
   document.getElementById("entrySyncSheetBtn").addEventListener("click", syncAllSportsFromGoogleSheet);
   document.getElementById("workloadExportXlsxBtn").addEventListener("click", exportWorkloadExcel);
 
-  // Theme Toggle
+  // Standard Theme Toggle (Light / Dark)
+  document.documentElement.classList.remove("theme-mission", "theme-glassento", "theme-swiss");
+  try { localStorage.removeItem("rm_theme_preset"); } catch (e) {}
+
   document.getElementById("themeToggleBtn").addEventListener("click", () => {
     document.documentElement.classList.toggle("theme-dark");
     updateDashboard();
     renderWorkloadModule();
   });
+
+  // Capture button for World Clock Card
+  const capWcBtn = document.getElementById("captureWorldClockBtn");
+  if (capWcBtn) {
+    capWcBtn.addEventListener("click", () => captureElementAsPng("view-worldclock", "world-time-calculator.png"));
+  }
+
+  // ===== LIVE WORLD CLOCKS & BROADCAST TIME CONVERTER =====
+  function getZoneParts(dateObj, timeZone) {
+    const fmt = new Intl.DateTimeFormat("en-GB", {
+      timeZone,
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+      hour: "2-digit",
+      minute: "2-digit",
+      second: "2-digit",
+      hour12: false
+    });
+    const parts = {};
+    fmt.formatToParts(dateObj).forEach(p => { parts[p.type] = p.value; });
+    const h = parts.hour === "24" ? "00" : parts.hour;
+    return {
+      year: Number(parts.year),
+      month: Number(parts.month),
+      day: Number(parts.day),
+      hour: Number(h),
+      minute: Number(parts.minute),
+      second: Number(parts.second),
+      isoDate: `${parts.year}-${parts.month}-${parts.day}`,
+      hms: `${h}:${parts.minute}:${parts.second}`,
+      hm: `${h}:${parts.minute}`
+    };
+  }
+
+  function getZoneOffsetMinutes(dateObj, timeZone) {
+    const utcP = getZoneParts(dateObj, "UTC");
+    const tzP = getZoneParts(dateObj, timeZone);
+    const utcMs = Date.UTC(utcP.year, utcP.month - 1, utcP.day, utcP.hour, utcP.minute, utcP.second);
+    const tzMs = Date.UTC(tzP.year, tzP.month - 1, tzP.day, tzP.hour, tzP.minute, tzP.second);
+    return Math.round((tzMs - utcMs) / 60000);
+  }
+
+  function formatOffsetLabel(offsetMins) {
+    const sign = offsetMins >= 0 ? "+" : "-";
+    const abs = Math.abs(offsetMins);
+    const hh = Math.floor(abs / 60);
+    const mm = abs % 60;
+    return mm > 0 ? `UTC${sign}${hh}:${String(mm).padStart(2, "0")}` : `UTC${sign}${hh}`;
+  }
+
+  function zonedWallTimeToEpoch(isoDateStr, hmStr, sourceZone) {
+    const [y, m, d] = (isoDateStr || "2026-11-09").split("-").map(Number);
+    const [hh, mm] = (hmStr || "20:00").split(":").map(Number);
+    const approxUtc = new Date(Date.UTC(y, (m || 1) - 1, d || 1, hh || 0, mm || 0, 0));
+    const offset1 = getZoneOffsetMinutes(approxUtc, sourceZone);
+    const candidate = new Date(approxUtc.getTime() - offset1 * 60000);
+    const offset2 = getZoneOffsetMinutes(candidate, sourceZone);
+    return new Date(approxUtc.getTime() - offset2 * 60000);
+  }
+
+  function formatThaiDateReadable(isoDateStr) {
+    const dt = parseISO(isoDateStr);
+    if (!dt) return isoDateStr;
+    const dow = DAYS_TH[(dt.getDay() + 6) % 7];
+    return `วัน${dow}ที่ ${dt.getDate()} ${MONTHS_TH[dt.getMonth()]} ${dt.getFullYear()}`;
+  }
+
+  function tickWorldClocks() {
+    const now = new Date();
+    const bkk = getZoneParts(now, "Asia/Bangkok");
+    const utc = getZoneParts(now, "UTC");
+    const lon = getZoneParts(now, "Europe/London");
+    const par = getZoneParts(now, "Europe/Paris");
+    const ruh = getZoneParts(now, "Asia/Riyadh");
+    const tyo = getZoneParts(now, "Asia/Tokyo");
+
+    const topThai = document.getElementById("topClockThaiVal");
+    const topUtc = document.getElementById("topClockUtcVal");
+    const topCust = document.getElementById("topClockCustomVal");
+    const topCustTag = document.getElementById("topClockCustomTag");
+    const topSel = document.getElementById("topClockZoneSelect");
+
+    if (topThai) topThai.textContent = bkk.hms;
+    if (topUtc) topUtc.textContent = utc.hms;
+    if (topSel && topCust) {
+      const selZone = topSel.value || "Europe/Paris";
+      const custParts = getZoneParts(now, selZone);
+      topCust.textContent = custParts.hms;
+      const opt = topSel.options[topSel.selectedIndex];
+      if (topCustTag && opt && opt.dataset.short) {
+        topCustTag.textContent = opt.dataset.short;
+      }
+    }
+
+    const setCard = (suffix, parts, zone) => {
+      const tEl = document.getElementById(`wcCardTime_${suffix}`);
+      const dEl = document.getElementById(`wcCardDate_${suffix}`);
+      const oEl = document.getElementById(`wcCardOffset_${suffix}`);
+      if (tEl) tEl.textContent = parts.hms;
+      if (dEl) dEl.textContent = formatThaiDateReadable(parts.isoDate);
+      if (oEl && zone) oEl.textContent = formatOffsetLabel(getZoneOffsetMinutes(now, zone));
+    };
+    setCard("BKK", bkk, "Asia/Bangkok");
+    setCard("UTC", utc, "UTC");
+    setCard("LON", lon, "Europe/London");
+    setCard("PAR", par, "Europe/Paris");
+    setCard("RUH", ruh, "Asia/Riyadh");
+    setCard("TYO", tyo, "Asia/Tokyo");
+  }
+
+  function updateWorldTimeCalculator() {
+    const dateInput = document.getElementById("wcInputDate");
+    const timeInput = document.getElementById("wcInputTime");
+    const srcSelect = document.getElementById("wcSourceZone");
+    const tgtSelect = document.getElementById("wcTargetZone");
+    if (!dateInput || !timeInput || !srcSelect || !tgtSelect) return;
+
+    if (!dateInput.value) {
+      dateInput.value = getZoneParts(new Date(), "Asia/Bangkok").isoDate;
+    }
+
+    const srcZone = srcSelect.value || "Europe/Paris";
+    const tgtZone = tgtSelect.value || "Asia/Bangkok";
+    const epoch = zonedWallTimeToEpoch(dateInput.value, timeInput.value || "20:00", srcZone);
+
+    const srcParts = getZoneParts(epoch, srcZone);
+    const tgtParts = getZoneParts(epoch, tgtZone);
+    const bkkParts = getZoneParts(epoch, "Asia/Bangkok");
+    const utcParts = getZoneParts(epoch, "UTC");
+    const lonParts = getZoneParts(epoch, "Europe/London");
+    const parParts = getZoneParts(epoch, "Europe/Paris");
+
+    const srcOffset = getZoneOffsetMinutes(epoch, srcZone);
+    const tgtOffset = getZoneOffsetMinutes(epoch, tgtZone);
+    const diffHrs = (tgtOffset - srcOffset) / 60;
+    const diffSign = diffHrs >= 0 ? "+" : "";
+
+    const tgtOptionText = tgtSelect.options[tgtSelect.selectedIndex]?.textContent || tgtZone;
+    document.getElementById("wcResultTargetLabel").textContent = `🎯 เวลาในโซนปลายทาง (${tgtOptionText})`;
+    document.getElementById("wcResultMainTime").textContent = `${tgtParts.hm} น.`;
+    document.getElementById("wcResultMainDate").textContent = `${formatThaiDateReadable(tgtParts.isoDate)} (${tgtParts.isoDate})`;
+    document.getElementById("wcResultHourDiffLabel").textContent = `ต่างจากต้นทาง ${diffSign}${diffHrs} ชม. (${formatOffsetLabel(srcOffset)} ➔ ${formatOffsetLabel(tgtOffset)})`;
+
+    const dayDiffBadge = document.getElementById("wcResultDayDiffBadge");
+    if (tgtParts.isoDate > srcParts.isoDate) {
+      dayDiffBadge.className = "badge Issue";
+      dayDiffBadge.textContent = "🌙 ข้ามเที่ยงคืน (+1 วันถัดไป)";
+    } else if (tgtParts.isoDate < srcParts.isoDate) {
+      dayDiffBadge.className = "badge Fix";
+      dayDiffBadge.textContent = "⏪ ย้อนกลับ (-1 วันก่อนหน้า)";
+    } else {
+      dayDiffBadge.className = "badge Pass";
+      dayDiffBadge.textContent = "☀️ วันเดียวกันกับต้นทาง";
+    }
+
+    document.getElementById("wcQuickBkk").textContent = `${bkkParts.hm} (${bkkParts.isoDate.slice(5)})`;
+    document.getElementById("wcQuickUtc").textContent = `${utcParts.hm} (${utcParts.isoDate.slice(5)})`;
+    document.getElementById("wcQuickLon").textContent = `${lonParts.hm} (${lonParts.isoDate.slice(5)})`;
+    document.getElementById("wcQuickPar").textContent = `${parParts.hm} (${parParts.isoDate.slice(5)})`;
+
+    // Pre-check times in Thai time (Asia/Bangkok)
+    const preIntl = getZoneParts(new Date(epoch.getTime() - 2 * 3600000), "Asia/Bangkok");
+    const preThai = getZoneParts(new Date(epoch.getTime() - 4 * 3600000), "Asia/Bangkok");
+    const preAsian = getZoneParts(new Date(epoch.getTime() - 1 * 3600000), "Asia/Bangkok");
+
+    document.getElementById("wcPrecheckIntl").textContent = `${preIntl.hm} น.`;
+    document.getElementById("wcPrecheckIntlDate").textContent = formatThaiDateReadable(preIntl.isoDate);
+    document.getElementById("wcPrecheckThai").textContent = `${preThai.hm} น.`;
+    document.getElementById("wcPrecheckThaiDate").textContent = formatThaiDateReadable(preThai.isoDate);
+    document.getElementById("wcPrecheckAsian").textContent = `${preAsian.hm} น.`;
+    document.getElementById("wcPrecheckAsianDate").textContent = formatThaiDateReadable(preAsian.isoDate);
+
+    renderWorldClock24hMatrix(dateInput.value, srcZone, srcParts.hour);
+    renderWorldClockBatch(dateInput.value, srcZone);
+  }
+
+  function renderWorldClock24hMatrix(isoDateStr, srcZone, activeHour) {
+    const tbody = document.getElementById("wcMatrixTableBody");
+    const hdr = document.getElementById("wcMatrixSourceHeader");
+    if (!tbody) return;
+    if (hdr) {
+      const sel = document.getElementById("wcSourceZone");
+      hdr.textContent = sel && sel.selectedIndex >= 0 ? sel.options[sel.selectedIndex].textContent.split("(")[0].trim() : srcZone;
+    }
+    const rows = [];
+    for (let h = 0; h < 24; h++) {
+      const hm = `${String(h).padStart(2, "0")}:00`;
+      const ep = zonedWallTimeToEpoch(isoDateStr, hm, srcZone);
+      const u = getZoneParts(ep, "UTC");
+      const b = getZoneParts(ep, "Asia/Bangkok");
+      const pre = getZoneParts(new Date(ep.getTime() - 2 * 3600000), "Asia/Bangkok");
+      const nextDayTag = b.isoDate > isoDateStr ? ' <span class="badge Issue" style="font-size:10px; padding:1px 6px;">+1 วัน</span>' : '';
+      const isSelected = h === activeHour;
+      rows.push(`
+        <tr style="${isSelected ? 'background:var(--blue-soft); font-weight:800;' : ''}">
+          <td style="font-family:var(--mono); font-weight:700;">${hm}</td>
+          <td style="font-family:var(--mono);">${u.hm} UTC</td>
+          <td style="font-family:var(--mono); color:var(--blue); font-weight:700;">${b.hm} น.${nextDayTag}</td>
+          <td style="font-family:var(--mono); color:var(--pass);">${pre.hm} น.</td>
+        </tr>
+      `);
+    }
+    tbody.innerHTML = rows.join("");
+  }
+
+  function renderWorldClockBatch(isoDateStr, srcZone) {
+    const inputEl = document.getElementById("wcBatchInput");
+    const tbody = document.getElementById("wcBatchTableBody");
+    if (!inputEl || !tbody) return;
+    if (!inputEl.value.trim()) {
+      inputEl.value = "18:45 UEFA Champions League Match 1\n20:00 Premier League Highlight Match\n21:00 LaLiga / Serie A Big Match";
+    }
+    const lines = inputEl.value.split(/\r?\n/).map(l => l.trim()).filter(Boolean);
+    tbody.innerHTML = lines.map(line => {
+      const m = line.match(/(\d{1,2}[:.]\d{2})\s*(.*)/);
+      if (!m) {
+        return `<tr><td colspan="4" style="color:var(--ink-soft);">${escapeHtml(line)}</td></tr>`;
+      }
+      const rawHm = m[1].replace(".", ":");
+      const [hh, mm] = rawHm.split(":");
+      const hm = `${String(hh).padStart(2, "0")}:${mm}`;
+      const title = m[2] || "รายการถ่ายทอดสด";
+      const ep = zonedWallTimeToEpoch(isoDateStr, hm, srcZone);
+      const bkk = getZoneParts(ep, "Asia/Bangkok");
+      const pre = getZoneParts(new Date(ep.getTime() - 2 * 3600000), "Asia/Bangkok");
+      const dayBadge = bkk.isoDate > isoDateStr ? ' <span class="badge Issue" style="font-size:10px; padding:1px 6px;">+1 วัน (' + bkk.isoDate.slice(5) + ')</span>' : '';
+      return `
+        <tr>
+          <td style="font-family:var(--mono); font-weight:700;">${hm}</td>
+          <td>${escapeHtml(title)}</td>
+          <td style="font-family:var(--mono); font-weight:800; color:var(--blue);">${bkk.hm} น.${dayBadge}</td>
+          <td style="font-family:var(--mono); font-weight:700; color:var(--pass);">${pre.hm} น.</td>
+        </tr>
+      `;
+    }).join("");
+  }
+
+  ["wcInputDate", "wcInputTime", "wcSourceZone", "wcTargetZone"].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) {
+      el.addEventListener("change", updateWorldTimeCalculator);
+      el.addEventListener("input", updateWorldTimeCalculator);
+    }
+  });
+
+  document.querySelectorAll(".wc-preset-btn").forEach(btn => {
+    btn.addEventListener("click", () => {
+      const tInput = document.getElementById("wcInputTime");
+      if (tInput) {
+        tInput.value = btn.dataset.wctime;
+        updateWorldTimeCalculator();
+      }
+    });
+  });
+
+  const wcSwapBtn = document.getElementById("wcSwapZoneBtn");
+  if (wcSwapBtn) {
+    wcSwapBtn.addEventListener("click", () => {
+      const s = document.getElementById("wcSourceZone");
+      const t = document.getElementById("wcTargetZone");
+      if (s && t) {
+        const tmp = s.value;
+        // ensure option exists in both or add dynamically
+        if (![...t.options].some(o => o.value === s.value)) {
+          t.add(new Option(s.options[s.selectedIndex].text, s.value));
+        }
+        if (![...s.options].some(o => o.value === t.value)) {
+          s.add(new Option(t.options[t.selectedIndex].text, t.value));
+        }
+        s.value = t.value;
+        t.value = tmp;
+        updateWorldTimeCalculator();
+      }
+    });
+  }
+
+  const wcNowBtn = document.getElementById("wcUseNowBtn");
+  if (wcNowBtn) {
+    wcNowBtn.addEventListener("click", () => {
+      const srcZone = document.getElementById("wcSourceZone")?.value || "UTC";
+      const nowParts = getZoneParts(new Date(), srcZone);
+      document.getElementById("wcInputDate").value = nowParts.isoDate;
+      document.getElementById("wcInputTime").value = nowParts.hm;
+      updateWorldTimeCalculator();
+    });
+  }
+
+  const wcCopyBtn = document.getElementById("wcCopyResultBtn");
+  if (wcCopyBtn) {
+    wcCopyBtn.addEventListener("click", () => {
+      const title = document.getElementById("wcInputMatchTitle")?.value || "รายการถ่ายทอดสด";
+      const srcTime = document.getElementById("wcInputTime")?.value || "";
+      const srcDate = document.getElementById("wcInputDate")?.value || "";
+      const srcZone = document.getElementById("wcSourceZone")?.value || "";
+      const mainTime = document.getElementById("wcResultMainTime")?.textContent || "";
+      const mainDate = document.getElementById("wcResultMainDate")?.textContent || "";
+      const preIntl = document.getElementById("wcPrecheckIntl")?.textContent || "";
+      const summary = `📡 สรุปเวลาถ่ายทอดสด: ${title}\n• เวลาต้นทาง (${srcZone}): ${srcDate} เวลา ${srcTime}\n• เวลาประเทศไทย (ICT): ${mainDate} เวลา ${mainTime}\n• เวลาเข้าเตรียมงาน (-2 ชม.): ${preIntl}`;
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(summary).catch(() => {});
+      }
+      wcCopyBtn.textContent = "✅ คัดลอกแล้ว!";
+      setTimeout(() => { wcCopyBtn.textContent = "📋 คัดลอกสรุปเวลา"; }, 1800);
+    });
+  }
+
+  const wcBatchBtn = document.getElementById("wcRunBatchBtn");
+  if (wcBatchBtn) {
+    wcBatchBtn.addEventListener("click", updateWorldTimeCalculator);
+  }
+  const wcBatchInput = document.getElementById("wcBatchInput");
+  if (wcBatchInput) {
+    wcBatchInput.addEventListener("input", updateWorldTimeCalculator);
+  }
+
+  ["topClockThaiChip", "topClockUtcChip", "topClockCustomChip"].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.addEventListener("click", () => activateMainView("worldclock"));
+  });
+  const topZoneSel = document.getElementById("topClockZoneSelect");
+  if (topZoneSel) {
+    topZoneSel.addEventListener("change", tickWorldClocks);
+  }
+
+  tickWorldClocks();
+  updateWorldTimeCalculator();
+  setInterval(tickWorldClocks, 1000);
 
   // Save / Edit Row in Data Entry
   document.getElementById("saveRowBtn").addEventListener("click", async () => {
