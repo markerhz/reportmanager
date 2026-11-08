@@ -2190,6 +2190,9 @@ function showToast(text) {
 
 /* ===== 3. UNIVERSAL DATE, TIME & RECORD NORMALIZATION ===== */
 function pad(n) { return String(n).padStart(2, "0"); }
+function escapeHtml(v) {
+  return String(v ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+}
 function toISO(d) { return d.getFullYear() + "-" + pad(d.getMonth() + 1) + "-" + pad(d.getDate()); }
 
 function normalizeDateISO(val, fVal) {
@@ -3531,17 +3534,24 @@ function renderReport() {
   const passPct = list.length > 0 ? Math.round((passCount / list.length) * 100) : 100;
   document.getElementById("reportTotalChip").textContent = `${list.length.toLocaleString()} รายการ`;
   document.getElementById("reportPassChip").textContent = `Pass ${passPct}%`;
-  document.getElementById("reportTableBody").innerHTML = list.slice(0, 300).map(r => `
+  const shown = list.slice(0, 300);
+  const rowsHtml = shown.map(r => `
     <tr>
-      <td style="font-family:var(--mono);">${r.date}</td>
-      <td style="font-family:var(--mono);">${r.start}-${r.end}</td>
-      <td><span class="ch-pill">📺 ${getChannelLabel(r)}</span></td>
-      <td style="font-weight:600;">${r.name}</td>
-      <td>${r.feed}</td>
-      <td>${r.assign}</td>
-      <td><span class="badge ${r.status || 'Pass'}">${r.status || 'Pass'}</span></td>
+      <td style="font-family:var(--mono); white-space:nowrap;">${escapeHtml(r.date)}</td>
+      <td style="font-family:var(--mono); white-space:nowrap;">${escapeHtml(r.start)}-${escapeHtml(r.end)}</td>
+      <td><span class="ch-pill">📺 ${escapeHtml(getChannelLabel(r))}</span></td>
+      <td style="font-weight:600;">${escapeHtml(r.name)}</td>
+      <td>${escapeHtml(r.feed)}</td>
+      <td>${escapeHtml(r.assign)}</td>
+      <td><span class="badge ${escapeHtml(r.status || 'Pass')}">${escapeHtml(r.status || 'Pass')}</span></td>
     </tr>
   `).join("");
+  const moreHtml = list.length > shown.length
+    ? `<tr><td colspan="7" style="text-align:center; color:var(--ink-soft);">แสดง ${shown.length.toLocaleString()} จาก ${list.length.toLocaleString()} รายการ</td></tr>`
+    : "";
+  document.getElementById("reportTableBody").innerHTML = list.length
+    ? rowsHtml + moreHtml
+    : `<tr><td colspan="7" style="text-align:center; color:var(--ink-soft);">ไม่พบรายการในช่วงเวลาที่เลือก</td></tr>`;
 }
 
 function renderTrash() {
@@ -4115,7 +4125,7 @@ window.addEventListener("DOMContentLoaded", () => {
     const dt = parseISO(isoDateStr);
     if (!dt) return isoDateStr;
     const dow = DAYS_TH[(dt.getDay() + 6) % 7];
-    return `วัน${dow}ที่ ${dt.getDate()} ${MONTHS_TH[dt.getMonth()]} ${dt.getFullYear()}`;
+    return `วัน${dow}ที่ ${dt.getDate()} ${THAI_MONTHS[dt.getMonth()]} ${dt.getFullYear()}`;
   }
 
   function tickWorldClocks() {
@@ -4521,6 +4531,8 @@ window.addEventListener("DOMContentLoaded", () => {
     renderReport();
   });
   document.getElementById("reportApplyBtn").addEventListener("click", renderReport);
+  document.getElementById("reportFrom").addEventListener("change", renderReport);
+  document.getElementById("reportTo").addEventListener("change", renderReport);
   document.getElementById("reportPrintBtn").addEventListener("click", () => window.print());
 });
 </script>
