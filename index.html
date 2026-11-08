@@ -1667,11 +1667,23 @@ html.theme-swiss .stat-card::before {
                   <button type="button" class="seg-btn" data-rperiod="range">ช่วงวันที่</button>
                   <button type="button" class="seg-btn" data-rperiod="all">ทั้งหมด</button>
                 </div>
-                <div class="week-nav" id="reportWeekNavWrap">
-                  <button type="button" id="reportWeekPrev" class="btn sm">◀ สัปดาห์ก่อน</button>
+                <div class="week-nav" id="reportWeekNavWrap" style="flex-wrap:wrap;">
+                  <button type="button" id="reportWeekPrev" class="btn sm" title="สัปดาห์ก่อนหน้า">◀ สัปดาห์ก่อน</button>
                   <div class="week-label" id="reportWeekLabel">-</div>
-                  <button type="button" id="reportWeekNext" class="btn sm">สัปดาห์ถัดไป ▶</button>
+                  <button type="button" id="reportWeekNext" class="btn sm" title="สัปดาห์ถัดไป">สัปดาห์ถัดไป ▶</button>
+                  <select id="reportWeekSelect" title="เลือกสัปดาห์ที่มีฟีดการแข่งขัน" style="padding:4px 8px; font-size:12px; font-weight:700; min-width:210px;"></select>
+                  <input type="date" id="reportWeekDatePicker" title="เลือกวันที่เพื่อกระโดดไปสัปดาห์นั้น" style="padding:4px 8px; font-size:12px;">
                 </div>
+                <select id="reportChannelFilter" title="กรองตามช่องรายการในหน้ารายงาน" style="padding:6px 10px; font-size:12px; font-weight:600;">
+                  <option value="">📺 ทุกช่อง (All Channels)</option>
+                </select>
+                <select id="reportStatusFilter" title="กรองตามสถานะในหน้ารายงาน" style="padding:6px 10px; font-size:12px; font-weight:600;">
+                  <option value="">● ทุกสถานะ (All Status)</option>
+                  <option value="Pass">Pass (ปกติ)</option>
+                  <option value="Fix">Fix (แก้ไขแล้ว)</option>
+                  <option value="Issue">Issue (พบปัญหา)</option>
+                  <option value="Wait">Wait (รอดำเนินการ)</option>
+                </select>
                 <div id="reportRangeWrap" style="display:none; align-items:center; gap:6px;">
                   <span style="font-weight:700; font-size:13px;">ช่วงเวลารายงาน:</span>
                   <input type="date" id="reportFrom" value="2026-10-19">
@@ -2335,6 +2347,14 @@ function addDays(dateStr, delta) {
 function thaiShort(d) {
   return d.getDate() + " " + THAI_MONTHS[d.getMonth()];
 }
+function escapeHtml(str) {
+  return String(str ?? "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
 function getChannelLabel(r) {
   const ch = String(r.channel || "").trim();
   if (ch) return ch;
@@ -2363,6 +2383,8 @@ function initWeekAnchors(forceReset) {
   }
   const picker = document.getElementById("weekDatePicker");
   if (picker && weekAnchor) picker.value = toISO(weekAnchor);
+  const rPicker = document.getElementById("reportWeekDatePicker");
+  if (rPicker && reportWeekAnchor) rPicker.value = toISO(reportWeekAnchor);
 }
 
 /* ===== 4. DATA INITIALIZATION, CLEAR FIREBASE DB & REAL-TIME SYNC ===== */
@@ -3507,13 +3529,56 @@ function renderTable() {
   });
 }
 
+function populateReportWeekAndChannelOptions() {
+  const weekSel = document.getElementById("reportWeekSelect");
+  if (weekSel) {
+    const weekCounts = {};
+    records.forEach(r => {
+      if (!r.date) return;
+      const mon = toISO(startOfWeek(parseISO(r.date)));
+      weekCounts[mon] = (weekCounts[mon] || 0) + 1;
+    });
+    const curStart = reportWeekAnchor ? toISO(reportWeekAnchor) : "";
+    if ( curStart && !weekCounts[curStart] ) {
+      weekCounts[curStart] = 0;
+    }
+    const sortedMondays = Object.keys(weekCounts).sort();
+    weekSel.innerHTML = sortedMondays.map(monIso => {
+      const mDt = parseISO(monIso);
+      const sDt = addDaysDate(mDt, 6);
+      const cnt = weekCounts[monIso] || 0;
+      const lbl = `📅 ${thaiShort(mDt)} - ${thaiShort(sDt)} ${sDt.getFullYear()} (${cnt} ฟีด)`;
+      return `<option value="${monIso}" ${monIso === curStart ? "selected" : ""}>${lbl}</option>`;
+    }).join("");
+  }
+
+  const chSel = document.getElementById("reportChannelFilter");
+  if (chSel) {
+    const prevVal = chSel.value;
+    const chSet = new Set();
+    records.forEach(r => {
+      const ch = getChannelLabel(r);
+      if (ch) chSet.add(ch);
+    });
+    const sortedCh = [...chSet].sort((a, b) => a.localeCompare(b));
+    chSel.innerHTML = `<option value="">📺 ทุกช่อง (${sortedCh.length} Channels)</option>` +
+      sortedCh.map(c => `<option value="${escapeHtml(c)}" ${c === prevVal ? "selected" : ""}>📺 ${escapeHtml(c)}</option>`).join("");
+  }
+}
+
 function renderReport() {
   if (!reportWeekAnchor) initWeekAnchors(false);
+  populateReportWeekAndChannelOptions();
+
   let list = [];
   if (reportPeriod === "week") {
     const start = toISO(reportWeekAnchor);
     const endDt = addDaysDate(reportWeekAnchor, 6);
     const end = toISO(endDt);
+    const rPicker = document.getElementById("reportWeekDatePicker");
+    if (rPicker) rPicker.value = start;
+    const rWeekSel = document.getElementById("reportWeekSelect");
+    if (rWeekSel) rWeekSel.value = start;
     document.getElementById("reportWeekLabel").textContent = `${thaiShort(reportWeekAnchor)} - ${thaiShort(endDt)} ${endDt.getFullYear()}`;
     document.getElementById("reportSubTitle").textContent = `AIS PLAY Live Event Operations • สัปดาห์ ${thaiShort(reportWeekAnchor)} - ${thaiShort(endDt)} ${endDt.getFullYear()}`;
     list = records.filter(r => r.date >= start && r.date <= end);
@@ -3525,6 +3590,15 @@ function renderReport() {
   } else {
     document.getElementById("reportSubTitle").textContent = `AIS PLAY Live Event Operations • ทั้งหมด ${records.length.toLocaleString()} รายการ`;
     list = records;
+  }
+
+  const chFilterVal = document.getElementById("reportChannelFilter")?.value || "";
+  if (chFilterVal) {
+    list = list.filter(r => getChannelLabel(r) === chFilterVal);
+  }
+  const stFilterVal = document.getElementById("reportStatusFilter")?.value || "";
+  if (stFilterVal) {
+    list = list.filter(r => (r.status || "Pass") === stFilterVal);
   }
 
   const passCount = list.filter(r => (r.status || "Pass") === "Pass").length;
@@ -4054,7 +4128,7 @@ window.addEventListener("DOMContentLoaded", () => {
   // Capture button for World Clock Card
   const capWcBtn = document.getElementById("captureWorldClockBtn");
   if (capWcBtn) {
-    capWcBtn.addEventListener("click", () => captureElementAsPng("view-worldclock", "world-time-calculator.png"));
+    capWcBtn.addEventListener("click", () => captureElementAsImage(document.getElementById("worldClockCaptureCard"), "world-time-calculator"));
   }
 
   // ===== LIVE WORLD CLOCKS & BROADCAST TIME CONVERTER =====
@@ -4115,7 +4189,7 @@ window.addEventListener("DOMContentLoaded", () => {
     const dt = parseISO(isoDateStr);
     if (!dt) return isoDateStr;
     const dow = DAYS_TH[(dt.getDay() + 6) % 7];
-    return `วัน${dow}ที่ ${dt.getDate()} ${MONTHS_TH[dt.getMonth()]} ${dt.getFullYear()}`;
+    return `วัน${dow}ที่ ${dt.getDate()} ${THAI_MONTHS[dt.getMonth()]} ${dt.getFullYear()}`;
   }
 
   function tickWorldClocks() {
@@ -4520,7 +4594,33 @@ window.addEventListener("DOMContentLoaded", () => {
     reportWeekAnchor = addDaysDate(reportWeekAnchor, 7);
     renderReport();
   });
+  const rWeekSelect = document.getElementById("reportWeekSelect");
+  if (rWeekSelect) {
+    rWeekSelect.addEventListener("change", (e) => {
+      if (e.target.value) {
+        reportWeekAnchor = startOfWeek(parseISO(e.target.value));
+        renderReport();
+      }
+    });
+  }
+  const rDatePicker = document.getElementById("reportWeekDatePicker");
+  if (rDatePicker) {
+    rDatePicker.addEventListener("change", (e) => {
+      if (e.target.value) {
+        reportWeekAnchor = startOfWeek(parseISO(e.target.value));
+        renderReport();
+      }
+    });
+  }
+  const rChFilter = document.getElementById("reportChannelFilter");
+  if (rChFilter) rChFilter.addEventListener("change", renderReport);
+  const rStFilter = document.getElementById("reportStatusFilter");
+  if (rStFilter) rStFilter.addEventListener("change", renderReport);
   document.getElementById("reportApplyBtn").addEventListener("click", renderReport);
+  const rFrom = document.getElementById("reportFrom");
+  const rTo = document.getElementById("reportTo");
+  if (rFrom) rFrom.addEventListener("change", renderReport);
+  if (rTo) rTo.addEventListener("change", renderReport);
   document.getElementById("reportPrintBtn").addEventListener("click", () => window.print());
 });
 </script>
