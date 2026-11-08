@@ -1225,8 +1225,6 @@ html.theme-swiss .stat-card::before {
                 <div class="card-sub">คำนวณตามกฎเวลาเตรียมงานจริง: ไทยลีก/FA Cup +4 ชม. • กีฬาต่างประเทศ +2 ชม. • Asian/Para Games +1 ชม. • ตัดกะ 04:00 น. (ไม่นับ NOC VSS.)</div>
               </div>
               <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
-                <button type="button" id="workloadClearDbBtn" class="btn sm danger">🗑️ ลบฐานข้อมูล Firebase</button>
-                <button type="button" id="workloadSyncBtn" class="btn sm sync-btn">🔄 ดึงข้อมูลกีฬาทั้งหมด</button>
                 <button type="button" id="workloadExportXlsxBtn" class="btn sm">⬇ Export สรุปชั่วโมง (.xlsx)</button>
               </div>
             </div>
@@ -1234,16 +1232,16 @@ html.theme-swiss .stat-card::before {
             <!-- Sub-Tabs Segmented Bar -->
             <div class="seg" id="workloadSubTabs" style="width:100%; justify-content:flex-start;">
               <button type="button" class="seg-btn active" data-subtab="monthly-hours">
-                📅 1. สรุปชั่วโมงรายเดือน (ใครทำงานกี่ชม.)
+                📅 1. สรุปชั่วโมงรายเดือน
               </button>
               <button type="button" class="seg-btn" data-subtab="multi-month">
-                📈 2. แนวโน้มรายเดือน (ก.ย. – พ.ย.)
+                📈 2. แนวโน้มรายเดือน
               </button>
               <button type="button" class="seg-btn" data-subtab="daily-continuous">
-                ⏰ 3. ตารางกะรายวัน (ทำงานยาวต่อเนื่อง)
+                ⏰ 3. ตารางกะรายวัน
               </button>
               <button type="button" class="seg-btn" data-subtab="daily-sport">
-                🏆 4. แจกแจงตามฟีดกีฬา (แยกตามลีก)
+                🏆 4. แจกแจงตามฟีดกีฬา
               </button>
               <button type="button" class="seg-btn" data-subtab="engineer-feeds">
                 🔍 5. ค้นหาแมตช์รายบุคคล
@@ -1560,8 +1558,6 @@ html.theme-swiss .stat-card::before {
                 <div class="card-sub">ลบฐานข้อมูลเดิมใน Firebase หรือดึงข้อมูลกีฬาทั้งหมดจาก Google Sheet เข้าสู่ Firebase</div>
               </div>
               <div style="display:flex; gap:8px; flex-wrap:wrap;">
-                <button type="button" id="entryClearDbBtn" class="btn sm danger">🗑️ ลบฐานข้อมูล Firebase</button>
-                <button type="button" id="entrySyncSheetBtn" class="btn sm sync-btn">🔄 ดึงข้อมูลกีฬาทั้งหมด</button>
                 <button type="button" id="openBulkBtn" class="btn sm">📋 นำเข้าจาก Excel</button>
               </div>
             </div>
@@ -1674,16 +1670,7 @@ html.theme-swiss .stat-card::before {
                   <select id="reportWeekSelect" title="เลือกสัปดาห์ที่มีฟีดการแข่งขัน" style="padding:4px 8px; font-size:12px; font-weight:700; min-width:210px;"></select>
                   <input type="date" id="reportWeekDatePicker" title="เลือกวันที่เพื่อกระโดดไปสัปดาห์นั้น" style="padding:4px 8px; font-size:12px;">
                 </div>
-                <select id="reportChannelFilter" title="กรองตามช่องรายการในหน้ารายงาน" style="padding:6px 10px; font-size:12px; font-weight:600;">
-                  <option value="">📺 ทุกช่อง (All Channels)</option>
-                </select>
-                <select id="reportStatusFilter" title="กรองตามสถานะในหน้ารายงาน" style="padding:6px 10px; font-size:12px; font-weight:600;">
-                  <option value="">● ทุกสถานะ (All Status)</option>
-                  <option value="Pass">Pass (ปกติ)</option>
-                  <option value="Fix">Fix (แก้ไขแล้ว)</option>
-                  <option value="Issue">Issue (พบปัญหา)</option>
-                  <option value="Wait">Wait (รอดำเนินการ)</option>
-                </select>
+
                 <div id="reportRangeWrap" style="display:none; align-items:center; gap:6px;">
                   <span style="font-weight:700; font-size:13px;">ช่วงเวลารายงาน:</span>
                   <input type="date" id="reportFrom" value="2026-10-19">
@@ -2699,7 +2686,7 @@ function updateDashboard() {
     <div style="display:flex; align-items:center; justify-content:space-between; padding:9px 13px; background:var(--surface-2); border-radius:10px; border:1px solid var(--border); gap:8px; flex-wrap:wrap;">
       <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
         <strong style="font-family:var(--mono); color:var(--blue);">${r.date} [${r.start}-${r.end}]</strong>
-        <span class="ch-pill">📺 ${getChannelLabel(r)}</span>
+        <span class="ch-pill">${getChannelLabel(r)}</span>
         <span style="font-weight:700;">${r.feed}</span>
         <span style="font-size:12px; color:var(--ink-soft);">(${r.name})</span>
       </div>
@@ -3344,7 +3331,7 @@ function renderDailyShiftSubTabs(enriched) {
       table1.push(`
         <tr>
           <td style="font-weight:700;">${eng}</td>
-          <td><span class="ch-pill">📺 ${channels}</span></td>
+          <td><span class="ch-pill">${channels}</span></td>
           <td>${sports}</td>
           <td style="text-align:center; font-family:var(--mono); color:var(--issue); font-weight:700;">${fmtNormHrs(minC)}</td>
           <td style="text-align:center; font-family:var(--mono); color:var(--blue); font-weight:700;">${fmtNormHrs(maxE)}</td>
@@ -3386,7 +3373,7 @@ function renderDailyShiftSubTabs(enriched) {
       const lLeft = Math.max(0, Math.min(100, ((minS - 4) / 24) * 100));
       const lWid = Math.max(2, Math.min(100 - lLeft, ((maxE - minS) / 24) * 100));
 
-      const displayTag = wkSportGroupBy === "channel" ? `📺 ${chStr}` : lgStr;
+      const displayTag = wkSportGroupBy === "channel" ? `${chStr}` : lgStr;
 
       gantt2.push(`
         <div class="gantt-row">
@@ -3401,7 +3388,7 @@ function renderDailyShiftSubTabs(enriched) {
       table2.push(`
         <tr>
           <td style="font-weight:700;">${eng}</td>
-          <td><span class="ch-pill">📺 ${chStr}</span></td>
+          <td><span class="ch-pill">${chStr}</span></td>
           <td style="color:var(--ink); font-weight:600;">${lgStr}</td>
           <td style="text-align:center; font-family:var(--mono);">${fmtNormHrs(minS)} - ${fmtNormHrs(maxE)}</td>
           <td style="text-align:center; font-family:var(--mono); color:var(--issue); font-weight:700;">+${prep} ชม.</td>
@@ -3433,7 +3420,7 @@ function renderExplorerTable(enriched) {
       <td style="font-family:var(--mono);">${e.broadcastDate}</td>
       <td style="font-family:var(--mono); color:var(--blue);">${e.start} - ${e.end}</td>
       <td style="font-family:var(--mono); color:var(--issue); font-weight:700;">${fmtNormHrs(e.checkIn)} (+${e.prep}h)</td>
-      <td><span class="ch-pill">📺 ${e.channelLabel}</span></td>
+      <td><span class="ch-pill">${e.channelLabel}</span></td>
       <td style="font-weight:600;">${e.name}</td>
       <td>${e.feed}</td>
       <td style="font-weight:600;">${e.assign}</td>
@@ -3480,7 +3467,7 @@ function renderTable() {
     <tr>
       <td style="font-family:var(--mono); white-space:nowrap;">${r.date}</td>
       <td style="font-family:var(--mono); white-space:nowrap;">${r.start}-${r.end}</td>
-      <td><span class="ch-pill">📺 ${getChannelLabel(r)}</span></td>
+      <td><span class="ch-pill">${getChannelLabel(r)}</span></td>
       <td style="font-weight:600; color:var(--blue);">${r.name}</td>
       <td>${r.feed}</td>
       <td style="font-weight:600;">${r.assign}</td>
@@ -3552,18 +3539,7 @@ function populateReportWeekAndChannelOptions() {
     }).join("");
   }
 
-  const chSel = document.getElementById("reportChannelFilter");
-  if (chSel) {
-    const prevVal = chSel.value;
-    const chSet = new Set();
-    records.forEach(r => {
-      const ch = getChannelLabel(r);
-      if (ch) chSet.add(ch);
-    });
-    const sortedCh = [...chSet].sort((a, b) => a.localeCompare(b));
-    chSel.innerHTML = `<option value="">📺 ทุกช่อง (${sortedCh.length} Channels)</option>` +
-      sortedCh.map(c => `<option value="${escapeHtml(c)}" ${c === prevVal ? "selected" : ""}>📺 ${escapeHtml(c)}</option>`).join("");
-  }
+
 }
 
 function renderReport() {
@@ -3592,14 +3568,7 @@ function renderReport() {
     list = records;
   }
 
-  const chFilterVal = document.getElementById("reportChannelFilter")?.value || "";
-  if (chFilterVal) {
-    list = list.filter(r => getChannelLabel(r) === chFilterVal);
-  }
-  const stFilterVal = document.getElementById("reportStatusFilter")?.value || "";
-  if (stFilterVal) {
-    list = list.filter(r => (r.status || "Pass") === stFilterVal);
-  }
+
 
   const passCount = list.filter(r => (r.status || "Pass") === "Pass").length;
   const passPct = list.length > 0 ? Math.round((passCount / list.length) * 100) : 100;
@@ -3609,7 +3578,7 @@ function renderReport() {
     <tr>
       <td style="font-family:var(--mono);">${r.date}</td>
       <td style="font-family:var(--mono);">${r.start}-${r.end}</td>
-      <td><span class="ch-pill">📺 ${getChannelLabel(r)}</span></td>
+      <td><span class="ch-pill">${getChannelLabel(r)}</span></td>
       <td style="font-weight:600;">${r.name}</td>
       <td>${r.feed}</td>
       <td>${r.assign}</td>
@@ -3622,7 +3591,7 @@ function renderTrash() {
   document.getElementById("trashTableBody").innerHTML = trashRecords.length ? trashRecords.map(r => `
     <tr>
       <td style="font-family:var(--mono);">${r.date}</td>
-      <td><span class="ch-pill">📺 ${getChannelLabel(r)}</span></td>
+      <td><span class="ch-pill">${getChannelLabel(r)}</span></td>
       <td>${r.name}</td>
       <td>${r.feed}</td>
       <td>${r.assign}</td>
@@ -3920,8 +3889,6 @@ window.addEventListener("DOMContentLoaded", () => {
     clearDbModal.style.display = "flex";
   }
   document.getElementById("clearFirebaseDbBtn").addEventListener("click", openClearDbModal);
-  document.getElementById("workloadClearDbBtn").addEventListener("click", openClearDbModal);
-  document.getElementById("entryClearDbBtn").addEventListener("click", openClearDbModal);
   document.getElementById("closeClearDbModalBtn").addEventListener("click", () => { clearDbModal.style.display = "none"; });
   document.getElementById("cancelClearDbBtn").addEventListener("click", () => { clearDbModal.style.display = "none"; });
   document.getElementById("confirmClearDbBtn").addEventListener("click", executeClearDatabase);
@@ -4111,8 +4078,6 @@ window.addEventListener("DOMContentLoaded", () => {
 
   // Sync All Sports Buttons
   document.getElementById("syncAllSportsBtn").addEventListener("click", syncAllSportsFromGoogleSheet);
-  document.getElementById("workloadSyncBtn").addEventListener("click", syncAllSportsFromGoogleSheet);
-  document.getElementById("entrySyncSheetBtn").addEventListener("click", syncAllSportsFromGoogleSheet);
   document.getElementById("workloadExportXlsxBtn").addEventListener("click", exportWorkloadExcel);
 
   // Standard Theme Toggle (Light / Dark)
@@ -4612,10 +4577,7 @@ window.addEventListener("DOMContentLoaded", () => {
       }
     });
   }
-  const rChFilter = document.getElementById("reportChannelFilter");
-  if (rChFilter) rChFilter.addEventListener("change", renderReport);
-  const rStFilter = document.getElementById("reportStatusFilter");
-  if (rStFilter) rStFilter.addEventListener("change", renderReport);
+
   document.getElementById("reportApplyBtn").addEventListener("click", renderReport);
   const rFrom = document.getElementById("reportFrom");
   const rTo = document.getElementById("reportTo");
