@@ -289,7 +289,7 @@ async function syncRealDatabase() {
     if (channel.endsWith('.0')) channel = channel.slice(0, -2);
     const assign = String(row[10] || '').trim();
 
-    if (!date || !/^\d{4}-\d{2}-\d{2}$/.test(date) || !assign || assign === 'Assign') continue;
+    if (!date || date.startsWith('1900') || !/^\d{4}-\d{2}-\d{2}$/.test(date) || !assign || assign === 'Assign') continue;
 
     const docId = `xlsx_${i + 3}_${date}`.replace(/[^a-zA-Z0-9_-]/g, '_');
     const assignees = assign.split(',').map(s => s.trim()).filter(Boolean);
