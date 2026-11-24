@@ -8,6 +8,8 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600;700;800&family=Manrope:wght@600;700;800&family=Noto+Sans+Thai:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html5-qrcode/2.3.8/html5-qrcode.min.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
@@ -34,7 +36,6 @@
   --wait: #64748B;
   --wait-bg: #F1F5F9;
   --led: #10B981;
-  --led-dim: rgba(16,185,129,0.18);
   --radius: 16px;
   --radius-sm: 10px;
   --shadow: 0 1px 3px rgba(15,23,42,0.06), 0 8px 24px -4px rgba(15,23,42,0.05);
@@ -241,6 +242,20 @@ body {
 .card-title { font-family: var(--display); font-size: 15px; font-weight: 700; color: var(--ink); }
 .card-sub { font-size: 12px; color: var(--ink-soft); margin-top: 2px; }
 
+/* Overdue Alert Banner */
+.overdue-banner {
+  background: linear-gradient(135deg, rgba(239,68,68,0.10), rgba(245,158,11,0.10));
+  border: 1px solid rgba(239,68,68,0.35);
+  border-radius: var(--radius);
+  padding: 14px 18px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.overdue-banner.hidden { display: none; }
+
 /* Stat Grid */
 .stat-grid {
   display: grid;
@@ -294,7 +309,7 @@ body {
   cursor: pointer; display: inline-flex; align-items: center; justify-content: center; font-size: 14px;
 }
 
-input[type="text"], input[type="email"], input[type="password"], input[type="date"], select, textarea {
+input[type="text"], input[type="email"], input[type="password"], input[type="date"], input[type="number"], select, textarea {
   background: var(--surface-2); border: 1px solid var(--border); color: var(--ink);
   border-radius: var(--radius-sm); padding: 8px 11px; font-family: var(--sans); font-size: 13px;
 }
@@ -311,6 +326,7 @@ table.data-table td {
   padding: 10px 12px; border-bottom: 1px solid var(--border); color: var(--ink); vertical-align: middle;
 }
 table.data-table tbody tr:hover { background: var(--blue-soft); }
+table.data-table tbody tr.row-overdue { background: rgba(239,68,68,0.06); }
 
 .sn-pill {
   display: inline-flex; align-items: center; padding: 2px 8px; border-radius: 6px;
@@ -322,14 +338,57 @@ table.data-table tbody tr:hover { background: var(--blue-soft); }
   font-size: 11.5px; font-weight: 600; background: var(--surface-2); color: var(--ink-soft);
   border: 1px solid var(--border);
 }
+.qty-pill {
+  display: inline-flex; align-items: center; padding: 2px 8px; border-radius: 6px;
+  font-family: var(--mono); font-size: 11.5px; font-weight: 700;
+  background: var(--surface-2); color: var(--ink); border: 1px solid var(--border);
+}
 .badge {
   display: inline-flex; align-items: center; gap: 4px;
   padding: 3px 10px; border-radius: 99px; font-size: 11.5px; font-weight: 700; white-space: nowrap;
 }
 .badge.Available { background: var(--pass-bg); color: var(--pass); }
 .badge.CheckedOut { background: var(--issue-bg); color: var(--issue); }
+.badge.PartialOut { background: var(--blue-soft); color: var(--blue); }
 .badge.Maintenance { background: var(--blue-soft); color: var(--blue); }
 .badge.Broken { background: var(--fix-bg); color: var(--fix); }
+.badge.Overdue { background: var(--fix-bg); color: var(--fix); }
+
+/* QR Sticker Label Grid */
+.qr-label-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+  gap: 12px;
+  max-height: 60vh;
+  overflow-y: auto;
+  padding: 4px;
+}
+.qr-sticker-card {
+  background: #FFFFFF;
+  color: #0F172A;
+  border: 1.5px dashed #94A3B8;
+  border-radius: 10px;
+  padding: 10px 12px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  page-break-inside: avoid;
+}
+.qr-code-box {
+  width: 76px;
+  height: 76px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.qr-sticker-info {
+  min-width: 0;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
 
 /* Modals & Toast */
 .modal-backdrop {
@@ -350,6 +409,17 @@ table.data-table tbody tr:hover { background: var(--blue-soft); }
   .sidebar { width: 100%; height: auto; position: static; }
   .side-nav { flex-direction: row; overflow-x: auto; padding: 8px 12px; }
   .side-tab-btn, .side-link-btn { width: auto; white-space: nowrap; }
+}
+
+@media print {
+  body * { visibility: hidden; }
+  #qrPrintModal, #qrPrintModal * { visibility: visible; }
+  #qrPrintModal {
+    position: absolute; left: 0; top: 0; width: 100%; background: #fff;
+    padding: 0; display: block !important;
+  }
+  #qrPrintModal .no-print { display: none !important; }
+  .qr-label-grid { max-height: none; overflow: visible; grid-template-columns: repeat(3, 1fr); gap: 8px; }
 }
 </style>
 </head>
@@ -376,7 +446,7 @@ table.data-table tbody tr:hover { background: var(--blue-soft); }
         <div class="brand-dot"></div>
         <div>
           <div class="brand-title">IT EQUIPMENT HUB</div>
-          <div class="brand-sub">Serial &amp; Asset Tracking</div>
+          <div class="brand-sub">Serial, Stock &amp; QR Tracking</div>
         </div>
       </div>
 
@@ -396,7 +466,7 @@ table.data-table tbody tr:hover { background: var(--blue-soft); }
       <div class="side-footer">
         <div class="live-chip">
           <span class="tally-dot"></span>
-          <span id="totalAssetChip">0 รายการอุปกรณ์</span>
+          <span id="totalAssetChip">0 รายการ (0 ชิ้น)</span>
         </div>
         <div class="user-chip" title="ผู้ใช้งานปัจจุบัน">
           👤 <span id="userEmailChip">กำลังตรวจสอบสิทธิ์...</span>
@@ -415,45 +485,57 @@ table.data-table tbody tr:hover { background: var(--blue-soft); }
           <span class="sync-pill" id="storageStatusBadge">● พร้อมใช้งาน</span>
         </div>
         <div class="topbar-actions">
-          <button type="button" class="btn sm" id="openBulkImportBtn">📋 นำเข้าจาก Excel / Sheet</button>
-          <button type="button" class="btn sm" id="exportExcelBtn">⬇ Export Excel (.xlsx)</button>
-          <button type="button" class="btn sm" id="exportJsonBtn">💾 สำรอง JSON</button>
-          <label class="btn sm" for="importJsonInput" style="margin:0;">📂 กู้คืน JSON</label>
+          <button type="button" class="btn sm" id="openScannerSearchBtn" title="เปิดกล้องสแกน Barcode / QR Code">📷 สแกน S/N / QR</button>
+          <button type="button" class="btn sm" id="printAllQrBtn" title="สร้างและพิมพ์สติกเกอร์ QR Code ติดอุปกรณ์">🏷️ พิมพ์ป้าย QR</button>
+          <button type="button" class="btn sm" id="openBulkImportBtn">📋 นำเข้า Excel</button>
+          <button type="button" class="btn sm" id="exportExcelBtn">⬇ Export .xlsx</button>
+          <button type="button" class="btn sm" id="exportJsonBtn">💾 JSON</button>
+          <label class="btn sm" for="importJsonInput" style="margin:0;">📂 กู้คืน</label>
           <input type="file" id="importJsonInput" accept=".json" style="display:none;">
-          <button type="button" class="btn sm primary" id="openAddAssetBtn">+ เพิ่มอุปกรณ์ใหม่</button>
+          <button type="button" class="btn sm primary" id="openAddAssetBtn">+ เพิ่มอุปกรณ์</button>
         </div>
       </header>
 
       <div class="content-area">
         <!-- VIEW 1: INVENTORY -->
         <section id="view-inventory" class="view active">
+
+          <!-- Overdue Alert Banner -->
+          <div id="overdueBanner" class="overdue-banner hidden">
+            <div>
+              <div style="font-weight:800; font-size:14px; color:var(--fix);" id="overdueBannerTitle">⏰ แจ้งเตือนอุปกรณ์เกินกำหนดคืน (Overdue)</div>
+              <div style="font-size:12.5px; color:var(--ink-soft); margin-top:2px;" id="overdueBannerList"></div>
+            </div>
+            <button type="button" class="btn sm danger" id="copyOverdueLineBtn">📋 คัดลอกแจ้งเตือนส่ง LINE</button>
+          </div>
+
           <div class="stat-grid">
             <div class="stat-card">
-              <div class="stat-label">อุปกรณ์ทั้งหมด (Total)</div>
+              <div class="stat-label">รายการทั้งหมด (Assets)</div>
               <div class="stat-val" id="kpiTotal">0</div>
-              <div class="stat-meta">รายการในทะเบียนทั้งหมด</div>
+              <div class="stat-meta" id="kpiTotalUnitsMeta">รวมทั้งหมด 0 ชิ้น</div>
             </div>
             <div class="stat-card">
               <div class="stat-label">พร้อมใช้งาน (Available)</div>
               <div class="stat-val" id="kpiAvailable" style="color:var(--pass);">0</div>
-              <div class="stat-meta">อยู่ที่จุดจัดเก็บ พร้อมเบิก</div>
+              <div class="stat-meta" id="kpiAvailUnitsMeta">พร้อมเบิก 0 ชิ้น</div>
             </div>
             <div class="stat-card">
               <div class="stat-label">กำลังเบิกใช้งาน (Checked Out)</div>
               <div class="stat-val" id="kpiCheckedOut" style="color:var(--issue);">0</div>
-              <div class="stat-meta">อยู่ระหว่างใช้งานนอกจุดเก็บ</div>
+              <div class="stat-meta" id="kpiOutUnitsMeta">ถูกเบิก 0 ชิ้น</div>
             </div>
             <div class="stat-card">
-              <div class="stat-label">ส่งซ่อม / ชำรุด (Issue)</div>
+              <div class="stat-label">เกินกำหนดคืน / ส่งซ่อม</div>
               <div class="stat-val" id="kpiMaintenance" style="color:var(--fix);">0</div>
-              <div class="stat-meta">ต้องตรวจสอบหรือซ่อมบำรุง</div>
+              <div class="stat-meta" id="kpiOverdueMeta">เกินกำหนดคืน 0 รายการ</div>
             </div>
           </div>
 
           <div class="card">
             <div class="card-header">
               <div style="display:flex; gap:8px; flex-wrap:wrap; align-items:center; flex:1;">
-                <input type="text" id="searchAssetBox" placeholder="🔍 ค้นหาชื่ออุปกรณ์, Serial Number (S/N), รหัส, ที่เก็บ หรือผู้เบิก..." style="min-width:260px; flex:1; max-width:420px;">
+                <input type="text" id="searchAssetBox" placeholder="🔍 ค้นหาชื่ออุปกรณ์, Serial Number (S/N), รหัส, ที่เก็บ หรือผู้เบิก..." style="min-width:250px; flex:1; max-width:400px;">
                 <select id="filterCategory">
                   <option value="">ทุกหมวดหมู่</option>
                 </select>
@@ -464,6 +546,8 @@ table.data-table tbody tr:hover { background: var(--blue-soft); }
                   <option value="">ทุกสถานะ</option>
                   <option value="Available">พร้อมใช้งาน (Available)</option>
                   <option value="CheckedOut">กำลังเบิกใช้งาน (Checked Out)</option>
+                  <option value="PartialOut">เบิกออกบางส่วน (Partial)</option>
+                  <option value="Overdue">เกินกำหนดคืน (Overdue)</option>
                   <option value="Maintenance">ส่งซ่อม (Maintenance)</option>
                   <option value="Broken">ชำรุด (Broken)</option>
                 </select>
@@ -480,10 +564,10 @@ table.data-table tbody tr:hover { background: var(--blue-soft); }
                     <th>ชื่ออุปกรณ์ / ยี่ห้อ-รุ่น</th>
                     <th>หมวดหมู่</th>
                     <th>Serial Number (S/N)</th>
-                    <th>สถานที่เก็บ (Location)</th>
+                    <th>จำนวนคงเหลือ</th>
+                    <th>สถานที่เก็บ</th>
                     <th>สถานะ</th>
-                    <th>ผู้ถือครองล่าสุด</th>
-                    <th>หมายเหตุ</th>
+                    <th>ผู้ถือครอง / กำหนดคืน</th>
                     <th style="text-align:right;">จัดการ</th>
                   </tr>
                 </thead>
@@ -499,7 +583,7 @@ table.data-table tbody tr:hover { background: var(--blue-soft); }
             <div class="card-header">
               <div>
                 <div class="card-title">🔄 ประวัติการเบิก–คืนอุปกรณ์ทั้งหมด (Checkout &amp; Return Logs)</div>
-                <div class="card-sub">บันทึกอัตโนมัติทุกครั้งที่มีการกดเบิกหรือรับคืนอุปกรณ์</div>
+                <div class="card-sub">บันทึกอัตโนมัติทุกครั้งที่มีการกดเบิกหรือรับคืนอุปกรณ์ พร้อมระบุจำนวนชิ้น</div>
               </div>
               <input type="text" id="searchLogBox" placeholder="🔍 ค้นหาประวัติ (ชื่ออุปกรณ์, S/N, ผู้เบิก, งาน)..." style="min-width:260px;">
             </div>
@@ -512,6 +596,7 @@ table.data-table tbody tr:hover { background: var(--blue-soft); }
                     <th>Asset ID</th>
                     <th>ชื่ออุปกรณ์</th>
                     <th>Serial Number</th>
+                    <th style="text-align:center;">จำนวน</th>
                     <th>ผู้เบิก / ผู้คืน</th>
                     <th>งาน / จุดประสงค์</th>
                     <th>กำหนดคืน</th>
@@ -529,7 +614,7 @@ table.data-table tbody tr:hover { background: var(--blue-soft); }
 
   <!-- Add / Edit Asset Modal -->
   <div id="assetModal" class="modal-backdrop">
-    <div class="card" style="max-width:600px; width:100%;">
+    <div class="card" style="max-width:620px; width:100%;">
       <div class="card-header">
         <div class="card-title" id="assetModalTitle">+ เพิ่มอุปกรณ์ไอทีใหม่</div>
         <button type="button" class="btn sm ghost" id="closeAssetModalBtn">✕</button>
@@ -541,7 +626,7 @@ table.data-table tbody tr:hover { background: var(--blue-soft); }
         </div>
         <div>
           <label style="font-size:12px; font-weight:700; color:var(--ink-soft); display:block; margin-bottom:4px;">ชื่ออุปกรณ์ (Item Name) *</label>
-          <input type="text" id="f_name" placeholder="เช่น MacBook Pro 14 / Encoder Kiloview" style="width:100%;">
+          <input type="text" id="f_name" placeholder="เช่น MacBook Pro 14 / สาย SDI 10m" style="width:100%;">
         </div>
         <div>
           <label style="font-size:12px; font-weight:700; color:var(--ink-soft); display:block; margin-bottom:4px;">หมวดหมู่ (Category)</label>
@@ -558,11 +643,18 @@ table.data-table tbody tr:hover { background: var(--blue-soft); }
         </div>
         <div>
           <label style="font-size:12px; font-weight:700; color:var(--ink-soft); display:block; margin-bottom:4px;">ยี่ห้อ / รุ่น (Brand &amp; Model)</label>
-          <input type="text" id="f_brand" placeholder="เช่น Kiloview E3 / Cisco SG350" style="width:100%;">
+          <input type="text" id="f_brand" placeholder="เช่น Kiloview E3 / Belden 1694A" style="width:100%;">
         </div>
         <div>
           <label style="font-size:12px; font-weight:700; color:var(--ink-soft); display:block; margin-bottom:4px;">Serial Number (S/N)</label>
-          <input type="text" id="f_serial" placeholder="สแกนหรือพิมพ์ Serial Number" style="width:100%; font-family:var(--mono);">
+          <div style="display:flex; gap:6px;">
+            <input type="text" id="f_serial" placeholder="สแกนหรือพิมพ์ S/N" style="flex:1; font-family:var(--mono);">
+            <button type="button" class="btn sm" id="scanSerialFieldBtn" title="เปิดกล้องสแกน S/N">📷</button>
+          </div>
+        </div>
+        <div>
+          <label style="font-size:12px; font-weight:700; color:var(--ink-soft); display:block; margin-bottom:4px;">จำนวนทั้งหมด (Total Qty ชิ้น)</label>
+          <input type="number" id="f_qtyTotal" min="1" value="1" style="width:100%; font-family:var(--mono); font-weight:700;">
         </div>
         <div>
           <label style="font-size:12px; font-weight:700; color:var(--ink-soft); display:block; margin-bottom:4px;">สถานที่เก็บ (Storage Location)</label>
@@ -584,14 +676,16 @@ table.data-table tbody tr:hover { background: var(--blue-soft); }
             <option value="Broken">ชำรุด (Broken)</option>
           </select>
         </div>
+      </div>
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:14px;">
         <div>
           <label style="font-size:12px; font-weight:700; color:var(--ink-soft); display:block; margin-bottom:4px;">ผู้ถือครองปัจจุบัน (Holder)</label>
           <input type="text" id="f_holder" placeholder="ชื่อผู้เบิก (ถ้ามี)" style="width:100%;">
         </div>
-      </div>
-      <div style="margin-bottom:14px;">
-        <label style="font-size:12px; font-weight:700; color:var(--ink-soft); display:block; margin-bottom:4px;">หมายเหตุ (Notes)</label>
-        <input type="text" id="f_notes" placeholder="เช่น มีอะแดปเตอร์ 1 ตัว, ประกันหมดปี 2027..." style="width:100%;">
+        <div>
+          <label style="font-size:12px; font-weight:700; color:var(--ink-soft); display:block; margin-bottom:4px;">หมายเหตุ (Notes)</label>
+          <input type="text" id="f_notes" placeholder="เช่น มีอะแดปเตอร์ 1 ตัว, ประกันหมดปี 2027..." style="width:100%;">
+        </div>
       </div>
       <div style="display:flex; justify-content:flex-end; gap:8px;">
         <button type="button" class="btn ghost" id="cancelAssetModalBtn">ยกเลิก</button>
@@ -609,9 +703,15 @@ table.data-table tbody tr:hover { background: var(--blue-soft); }
       </div>
       <div id="checkoutAssetSummary" style="background:var(--surface-2); border:1px solid var(--border); border-radius:10px; padding:10px 12px; font-size:12.5px; margin-bottom:12px;"></div>
       <div style="display:flex; flex-direction:column; gap:10px; margin-bottom:14px;">
-        <div>
-          <label style="font-size:12px; font-weight:700; color:var(--ink-soft); display:block; margin-bottom:4px;">ชื่อผู้เบิก / ผู้คืน *</label>
-          <input type="text" id="c_requester" placeholder="เช่น Kamol K. / Sippawit W." style="width:100%;">
+        <div style="display:grid; grid-template-columns:2fr 1fr; gap:10px;">
+          <div>
+            <label style="font-size:12px; font-weight:700; color:var(--ink-soft); display:block; margin-bottom:4px;">ชื่อผู้เบิก / ผู้คืน *</label>
+            <input type="text" id="c_requester" placeholder="เช่น Kamol K. / Sippawit W." style="width:100%;">
+          </div>
+          <div>
+            <label style="font-size:12px; font-weight:700; color:var(--ink-soft); display:block; margin-bottom:4px;">จำนวน (ชิ้น)</label>
+            <input type="number" id="c_qty" min="1" value="1" style="width:100%; font-family:var(--mono); font-weight:700;">
+          </div>
         </div>
         <div>
           <label style="font-size:12px; font-weight:700; color:var(--ink-soft); display:block; margin-bottom:4px;">งาน / สถานที่ที่นำไปใช้ (Purpose / Job)</label>
@@ -640,6 +740,40 @@ table.data-table tbody tr:hover { background: var(--blue-soft); }
     </div>
   </div>
 
+  <!-- Camera Barcode / QR Scanner Modal -->
+  <div id="scannerModal" class="modal-backdrop">
+    <div class="card" style="max-width:460px; width:100%;">
+      <div class="card-header">
+        <div>
+          <div class="card-title">📷 สแกน Barcode / QR Code</div>
+          <div class="card-sub" id="scannerSubText">ส่องกล้องไปที่บาร์โค้ด Serial Number หรือสติกเกอร์ QR Code</div>
+        </div>
+        <button type="button" class="btn sm ghost" id="closeScannerBtn">✕</button>
+      </div>
+      <div id="qrReaderBox" style="width:100%; border-radius:12px; overflow:hidden; background:#000; min-height:240px;"></div>
+      <div id="scannerManualFallback" style="margin-top:10px; font-size:12px; color:var(--ink-soft);">
+        หากใช้เครื่องยิง Barcode USB ให้คลิกที่ช่องค้นหาหรือช่อง S/N แล้วยิงได้เลยทันที
+      </div>
+    </div>
+  </div>
+
+  <!-- QR Sticker Print Modal -->
+  <div id="qrPrintModal" class="modal-backdrop">
+    <div class="card" style="max-width:860px; width:100%;">
+      <div class="card-header no-print">
+        <div>
+          <div class="card-title">🏷️ ป้ายสติกเกอร์ QR Code ติดอุปกรณ์ (Asset Tag Stickers)</div>
+          <div class="card-sub">เมื่อนำมือถือมาสแกน QR นี้ จะเปิดหน้าเว็บพร้อมค้นหาอุปกรณ์ชิ้นนั้นให้อัตโนมัติ</div>
+        </div>
+        <div style="display:flex; gap:8px;">
+          <button type="button" class="btn sm primary" id="doPrintQrBtn">🖨️ สั่งพิมพ์สติกเกอร์</button>
+          <button type="button" class="btn sm ghost" id="closeQrPrintBtn">✕</button>
+        </div>
+      </div>
+      <div id="qrLabelGrid" class="qr-label-grid"></div>
+    </div>
+  </div>
+
   <!-- Bulk Import Modal -->
   <div id="bulkModal" class="modal-backdrop">
     <div class="card" style="max-width:640px; width:100%;">
@@ -649,9 +783,9 @@ table.data-table tbody tr:hover { background: var(--blue-soft); }
       </div>
       <p style="font-size:12px; color:var(--ink-soft); margin-bottom:10px;">
         รูปแบบคอลัมน์ (คัดลอกจาก Excel/Google Sheet มาวางได้เลย):<br>
-        <code>Asset ID [Tab] ชื่ออุปกรณ์ [Tab] หมวดหมู่ [Tab] ยี่ห้อ/รุ่น [Tab] Serial Number [Tab] ที่เก็บ [Tab] หมายเหตุ</code>
+        <code>Asset ID [Tab] ชื่ออุปกรณ์ [Tab] หมวดหมู่ [Tab] ยี่ห้อ/รุ่น [Tab] Serial Number [Tab] ที่เก็บ [Tab] จำนวน [Tab] หมายเหตุ</code>
       </p>
-      <textarea id="bulkPasteArea" rows="8" placeholder="IT-001	Kiloview E3 Encoder	Encoder	Kiloview E3	KV-2026-8841	ห้อง MCR SC6	พร้อมสายไฟ" style="width:100%; font-family:var(--mono); font-size:12px; margin-bottom:12px;"></textarea>
+      <textarea id="bulkPasteArea" rows="8" placeholder="IT-001	Kiloview E3 Encoder	Encoder	Kiloview E3	KV-2026-8841	ห้อง MCR SC6	1	พร้อมสายไฟ&#10;IT-004	สาย SDI 10m	Cable / Adapter / Power	Belden	-	ตู้เก็บอุปกรณ์ B	15	สายส่งสัญญาณ" style="width:100%; font-family:var(--mono); font-size:12px; margin-bottom:12px;"></textarea>
       <div style="display:flex; justify-content:flex-end; gap:8px;">
         <button type="button" class="btn ghost" id="cancelBulkBtn">ยกเลิก</button>
         <button type="button" class="btn primary" id="confirmBulkBtn">นำเข้าข้อมูลทั้งหมด</button>
@@ -672,7 +806,6 @@ const firebaseConfig = {
 };
 
 let auth = null, db = null, currentUser = null;
-let cloudWritable = false;
 try {
   if (typeof firebase !== "undefined") {
     if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
@@ -685,9 +818,10 @@ const LS_ASSETS_KEY = "aisplay_it_equipment_v1";
 const LS_LOGS_KEY = "aisplay_it_equipment_logs_v1";
 
 const SAMPLE_ASSETS = [
-  { id: "IT-001", assetId: "IT-001", name: "Kiloview E3 Dual-Channel Encoder", category: "Encoder / Decoder", brand: "Kiloview E3", serial: "KV-E3-2026001", location: "ห้อง MCR SC Tower Fl.6", status: "Available", holder: "", notes: "พร้อมอะแดปเตอร์ + สาย SDI 1 เส้น" },
-  { id: "IT-002", assetId: "IT-002", name: "Blackmagic Micro Converter BiDirect", category: "Converter / Capture", brand: "Blackmagic 12G", serial: "BMD-12G-99210", location: "ตู้เก็บอุปกรณ์ A", status: "Available", holder: "", notes: "หัวแปลง SDI-HDMI" },
-  { id: "IT-003", assetId: "IT-003", name: "MikroTik hEX S Gigabit Router", category: "Network / Router / Switch", brand: "MikroTik RB760iGS", serial: "MTK-760-44182", location: "ห้อง Stock IT", status: "CheckedOut", holder: "Kamol K.", notes: "ใช้สำรองงานออกกอง OB" }
+  { id: "IT-001", assetId: "IT-001", name: "Kiloview E3 Dual-Channel Encoder", category: "Encoder / Decoder", brand: "Kiloview E3", serial: "KV-E3-2026001", location: "ห้อง MCR SC Tower Fl.6", qtyTotal: 1, qtyOut: 0, status: "Available", holder: "", dueDate: "", notes: "พร้อมอะแดปเตอร์ + สาย SDI 1 เส้น" },
+  { id: "IT-002", assetId: "IT-002", name: "Blackmagic Micro Converter BiDirect", category: "Converter / Capture", brand: "Blackmagic 12G", serial: "BMD-12G-99210", location: "ตู้เก็บอุปกรณ์ A", qtyTotal: 4, qtyOut: 0, status: "Available", holder: "", dueDate: "", notes: "หัวแปลง SDI-HDMI" },
+  { id: "IT-003", assetId: "IT-003", name: "MikroTik hEX S Gigabit Router", category: "Network / Router / Switch", brand: "MikroTik RB760iGS", serial: "MTK-760-44182", location: "ห้อง Stock IT", qtyTotal: 1, qtyOut: 1, status: "CheckedOut", holder: "Kamol K.", dueDate: "2026-11-23", notes: "ใช้สำรองงานออกกอง OB" },
+  { id: "IT-004", assetId: "IT-004", name: "สาย SDI Belden 1694A (10m)", category: "Cable / Adapter / Power", brand: "Belden", serial: "CABLE-SDI-10M", location: "ตู้เก็บอุปกรณ์ B", qtyTotal: 20, qtyOut: 4, status: "PartialOut", holder: "Sippawit W. (4)", dueDate: "2026-11-28", notes: "สายสัญญาณออกกอง" }
 ];
 
 let assets = [];
@@ -695,9 +829,19 @@ let logs = [];
 let editingAssetId = null;
 let checkoutTargetId = null;
 let checkoutActionType = "OUT";
+let html5QrScanner = null;
+let scannerMode = "search"; // "search" or "fillSerial"
 
 function escapeHtml(s) {
   return String(s ?? "").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#39;");
+}
+
+function getTodayISO() {
+  try {
+    return new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Bangkok", year: "numeric", month: "2-digit", day: "2-digit" }).format(new Date());
+  } catch (e) {
+    return new Date().toISOString().slice(0, 10);
+  }
 }
 
 function showToast(msg) {
@@ -706,7 +850,7 @@ function showToast(msg) {
   el.textContent = msg;
   el.classList.add("show");
   clearTimeout(showToast._t);
-  showToast._t = setTimeout(() => el.classList.remove("show"), 2800);
+  showToast._t = setTimeout(() => el.classList.remove("show"), 3000);
 }
 
 function setStorageBadge(mode) {
@@ -721,14 +865,39 @@ function setStorageBadge(mode) {
   }
 }
 
+function normalizeAsset(a) {
+  const qtyTotal = Math.max(1, parseInt(a.qtyTotal, 10) || 1);
+  let qtyOut = Math.max(0, parseInt(a.qtyOut, 10) || 0);
+  if (a.status === "CheckedOut" && qtyOut === 0) qtyOut = qtyTotal;
+  if (qtyOut > qtyTotal) qtyOut = qtyTotal;
+  let st = a.status || "Available";
+  if (st !== "Maintenance" && st !== "Broken") {
+    if (qtyOut <= 0) st = "Available";
+    else if (qtyOut >= qtyTotal) st = "CheckedOut";
+    else st = "PartialOut";
+  }
+  return {
+    ...a,
+    qtyTotal,
+    qtyOut,
+    status: st,
+    dueDate: a.dueDate || ""
+  };
+}
+
+function isAssetOverdue(a) {
+  const today = getTodayISO();
+  return (a.qtyOut > 0 || a.status === "CheckedOut" || a.status === "PartialOut") && a.dueDate && a.dueDate < today;
+}
+
 function loadLocalData() {
   try {
     const a = localStorage.getItem(LS_ASSETS_KEY);
     const l = localStorage.getItem(LS_LOGS_KEY);
-    assets = a ? JSON.parse(a) : SAMPLE_ASSETS.slice();
+    assets = (a ? JSON.parse(a) : SAMPLE_ASSETS.slice()).map(normalizeAsset);
     logs = l ? JSON.parse(l) : [];
   } catch (e) {
-    assets = SAMPLE_ASSETS.slice();
+    assets = SAMPLE_ASSETS.slice().map(normalizeAsset);
     logs = [];
   }
 }
@@ -744,42 +913,32 @@ async function saveAssetToCloud(item) {
   if (!db || !currentUser) return;
   try {
     await db.collection("equipment").doc(item.id).set(item, { merge: true });
-    cloudWritable = true;
     setStorageBadge("cloud");
   } catch (e) {
-    cloudWritable = false;
     setStorageBadge("local");
   }
 }
 
 async function deleteAssetFromCloud(id) {
   if (!db || !currentUser) return;
-  try {
-    await db.collection("equipment").doc(id).delete();
-  } catch (e) {}
+  try { await db.collection("equipment").doc(id).delete(); } catch (e) {}
 }
 
 async function saveLogToCloud(logItem) {
   if (!db || !currentUser) return;
-  try {
-    await db.collection("equipment_logs").doc(logItem.id).set(logItem);
-  } catch (e) {}
+  try { await db.collection("equipment_logs").doc(logItem.id).set(logItem); } catch (e) {}
 }
 
 function startCloudListeners() {
   if (!db) return;
   db.collection("equipment").onSnapshot(snap => {
-    cloudWritable = true;
     setStorageBadge("cloud");
     if (!snap.empty) {
-      assets = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+      assets = snap.docs.map(d => normalizeAsset({ id: d.id, ...d.data() }));
       saveLocalData();
       renderAll();
     }
-  }, () => {
-    cloudWritable = false;
-    setStorageBadge("local");
-  });
+  }, () => { setStorageBadge("local"); });
 
   db.collection("equipment_logs").onSnapshot(snap => {
     if (!snap.empty) {
@@ -792,7 +951,8 @@ function startCloudListeners() {
 
 function statusLabelThai(st) {
   if (st === "Available") return "พร้อมใช้งาน";
-  if (st === "CheckedOut") return "กำลังเบิกใช้";
+  if (st === "CheckedOut") return "ถูกเบิกทั้งหมด";
+  if (st === "PartialOut") return "เบิกออกบางส่วน";
   if (st === "Maintenance") return "ส่งซ่อม";
   if (st === "Broken") return "ชำรุด";
   return st || "พร้อมใช้งาน";
@@ -811,27 +971,55 @@ function refreshFilterDropdowns() {
     locs.map(l => `<option value="${escapeHtml(l)}" ${l === prevLoc ? "selected" : ""}>${escapeHtml(l)}</option>`).join("");
 }
 
+function renderOverdueBanner() {
+  const overdueItems = assets.filter(isAssetOverdue);
+  const banner = document.getElementById("overdueBanner");
+  if (!overdueItems.length) {
+    banner.classList.add("hidden");
+    return;
+  }
+  banner.classList.remove("hidden");
+  document.getElementById("overdueBannerTitle").textContent = `⏰ แจ้งเตือนอุปกรณ์เกินกำหนดคืน (${overdueItems.length} รายการ)`;
+  document.getElementById("overdueBannerList").textContent = overdueItems
+    .map(a => `${a.assetId} ${a.name} (ผู้เบิก: ${a.holder || "-"} • กำหนดคืน: ${a.dueDate})`)
+    .join(" | ");
+}
+
 function renderInventory() {
+  renderOverdueBanner();
   const q = (document.getElementById("searchAssetBox").value || "").trim().toLowerCase();
   const fCat = document.getElementById("filterCategory").value;
   const fLoc = document.getElementById("filterLocation").value;
   const fSt = document.getElementById("filterStatus").value;
 
   const total = assets.length;
-  const avail = assets.filter(a => (a.status || "Available") === "Available").length;
-  const out = assets.filter(a => a.status === "CheckedOut").length;
-  const maint = assets.filter(a => a.status === "Maintenance" || a.status === "Broken").length;
+  const totalUnits = assets.reduce((s, a) => s + (a.qtyTotal || 1), 0);
+  const outUnits = assets.reduce((s, a) => s + (a.qtyOut || 0), 0);
+  const availUnits = Math.max(0, totalUnits - outUnits);
+
+  const availCount = assets.filter(a => a.status === "Available" || a.status === "PartialOut").length;
+  const outCount = assets.filter(a => a.qtyOut > 0 || a.status === "CheckedOut" || a.status === "PartialOut").length;
+  const overdueCount = assets.filter(isAssetOverdue).length;
+  const issueCount = assets.filter(a => a.status === "Maintenance" || a.status === "Broken").length;
 
   document.getElementById("kpiTotal").textContent = total.toLocaleString();
-  document.getElementById("kpiAvailable").textContent = avail.toLocaleString();
-  document.getElementById("kpiCheckedOut").textContent = out.toLocaleString();
-  document.getElementById("kpiMaintenance").textContent = maint.toLocaleString();
-  document.getElementById("totalAssetChip").textContent = `${total.toLocaleString()} รายการอุปกรณ์`;
+  document.getElementById("kpiTotalUnitsMeta").textContent = `รวมทั้งหมด ${totalUnits.toLocaleString()} ชิ้น`;
+  document.getElementById("kpiAvailable").textContent = availCount.toLocaleString();
+  document.getElementById("kpiAvailUnitsMeta").textContent = `พร้อมเบิก ${availUnits.toLocaleString()} ชิ้น`;
+  document.getElementById("kpiCheckedOut").textContent = outCount.toLocaleString();
+  document.getElementById("kpiOutUnitsMeta").textContent = `ถูกเบิก ${outUnits.toLocaleString()} ชิ้น`;
+  document.getElementById("kpiMaintenance").textContent = (overdueCount + issueCount).toLocaleString();
+  document.getElementById("kpiOverdueMeta").textContent = `เกินกำหนดคืน ${overdueCount} • ซ่อม/ชำรุด ${issueCount}`;
+  document.getElementById("totalAssetChip").textContent = `${total.toLocaleString()} รายการ (${totalUnits.toLocaleString()} ชิ้น)`;
 
   const list = assets.filter(a => {
     if (fCat && a.category !== fCat) return false;
     if (fLoc && a.location !== fLoc) return false;
-    if (fSt && (a.status || "Available") !== fSt) return false;
+    if (fSt === "Overdue") {
+      if (!isAssetOverdue(a)) return false;
+    } else if (fSt && a.status !== fSt) {
+      return false;
+    }
     if (q) {
       const hay = `${a.assetId} ${a.name} ${a.brand} ${a.category} ${a.serial} ${a.location} ${a.holder} ${a.notes}`.toLowerCase();
       if (!hay.includes(q)) return false;
@@ -849,11 +1037,13 @@ function renderInventory() {
 
   tbody.innerHTML = list.map(a => {
     const st = a.status || "Available";
-    const actionBtn = st === "CheckedOut"
-      ? `<button type="button" class="btn sm success btn-checkin" data-id="${escapeHtml(a.id)}">↩ รับคืน</button>`
-      : `<button type="button" class="btn sm warn btn-checkout" data-id="${escapeHtml(a.id)}">📤 เบิก</button>`;
+    const availQ = Math.max(0, a.qtyTotal - a.qtyOut);
+    const overdue = isAssetOverdue(a);
+    const canOut = availQ > 0 && st !== "Maintenance" && st !== "Broken";
+    const canIn = a.qtyOut > 0;
+
     return `
-      <tr>
+      <tr class="${overdue ? "row-overdue" : ""}">
         <td style="font-family:var(--mono); font-weight:700; white-space:nowrap;">${escapeHtml(a.assetId || a.id)}</td>
         <td>
           <div style="font-weight:700; color:var(--ink);">${escapeHtml(a.name)}</div>
@@ -861,13 +1051,21 @@ function renderInventory() {
         </td>
         <td>${escapeHtml(a.category || "-")}</td>
         <td><span class="sn-pill">${escapeHtml(a.serial || "-")}</span></td>
+        <td><span class="qty-pill">${availQ} / ${a.qtyTotal} ชิ้น</span></td>
         <td><span class="loc-pill">${escapeHtml(a.location || "-")}</span></td>
-        <td><span class="badge ${st}">${statusLabelThai(st)}</span></td>
-        <td style="font-weight:600;">${escapeHtml(a.holder || "—")}</td>
-        <td style="font-size:12px; color:var(--ink-soft); max-width:200px;">${escapeHtml(a.notes || "")}</td>
+        <td>
+          <span class="badge ${st}">${statusLabelThai(st)}</span>
+          ${overdue ? `<div style="margin-top:3px;"><span class="badge Overdue">⏰ เกินกำหนด</span></div>` : ""}
+        </td>
+        <td>
+          <div style="font-weight:600;">${escapeHtml(a.holder || "—")}</div>
+          ${a.dueDate && a.qtyOut > 0 ? `<div style="font-size:11px; font-family:var(--mono); color:${overdue ? "var(--fix)" : "var(--ink-soft)"};">คืน: ${escapeHtml(a.dueDate)}</div>` : ""}
+        </td>
         <td style="white-space:nowrap; text-align:right;">
           <div style="display:inline-flex; gap:4px; align-items:center;">
-            ${actionBtn}
+            ${canOut ? `<button type="button" class="btn sm warn btn-checkout" data-id="${escapeHtml(a.id)}">📤 เบิก</button>` : ""}
+            ${canIn ? `<button type="button" class="btn sm success btn-checkin" data-id="${escapeHtml(a.id)}">↩ คืน</button>` : ""}
+            <button type="button" class="btn sm ghost btn-qr" data-id="${escapeHtml(a.id)}" title="พิมพ์ป้าย QR">🏷️</button>
             <button type="button" class="btn sm ghost btn-edit" data-id="${escapeHtml(a.id)}" title="แก้ไข">✏️</button>
             <button type="button" class="btn sm ghost btn-del" data-id="${escapeHtml(a.id)}" title="ลบ">🗑️</button>
           </div>
@@ -878,6 +1076,7 @@ function renderInventory() {
 
   tbody.querySelectorAll(".btn-checkout").forEach(b => b.addEventListener("click", () => openCheckoutModal(b.dataset.id, "OUT")));
   tbody.querySelectorAll(".btn-checkin").forEach(b => b.addEventListener("click", () => openCheckoutModal(b.dataset.id, "IN")));
+  tbody.querySelectorAll(".btn-qr").forEach(b => b.addEventListener("click", () => openQrPrintModal([b.dataset.id])));
   tbody.querySelectorAll(".btn-edit").forEach(b => b.addEventListener("click", () => openAssetModal(b.dataset.id)));
   tbody.querySelectorAll(".btn-del").forEach(b => b.addEventListener("click", () => removeAsset(b.dataset.id)));
 }
@@ -890,7 +1089,7 @@ function renderLogs() {
   });
   const tbody = document.getElementById("logsTableBody");
   if (!list.length) {
-    tbody.innerHTML = `<tr><td colspan="9" style="text-align:center; padding:28px; color:var(--ink-soft);">ยังไม่มีประวัติการเบิก–คืน</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="10" style="text-align:center; padding:28px; color:var(--ink-soft);">ยังไม่มีประวัติการเบิก–คืน</td></tr>`;
     return;
   }
   tbody.innerHTML = list.map(l => `
@@ -900,6 +1099,7 @@ function renderLogs() {
       <td style="font-family:var(--mono); font-weight:700;">${escapeHtml(l.assetId)}</td>
       <td style="font-weight:600;">${escapeHtml(l.itemName)}</td>
       <td><span class="sn-pill">${escapeHtml(l.serial || "-")}</span></td>
+      <td style="text-align:center; font-family:var(--mono); font-weight:700;">${l.qty || 1}</td>
       <td style="font-weight:700;">${escapeHtml(l.requester)}</td>
       <td>${escapeHtml(l.purpose || "-")}</td>
       <td style="font-family:var(--mono); font-size:12px;">${escapeHtml(l.dueDate || "—")}</td>
@@ -923,8 +1123,9 @@ function openAssetModal(editId = null) {
   document.getElementById("f_category").value = item ? item.category : "";
   document.getElementById("f_brand").value = item ? item.brand : "";
   document.getElementById("f_serial").value = item ? item.serial : "";
+  document.getElementById("f_qtyTotal").value = item ? (item.qtyTotal || 1) : 1;
   document.getElementById("f_location").value = item ? item.location : "";
-  document.getElementById("f_status").value = item ? (item.status || "Available") : "Available";
+  document.getElementById("f_status").value = item ? (item.status === "PartialOut" ? "CheckedOut" : (item.status || "Available")) : "Available";
   document.getElementById("f_holder").value = item ? (item.holder || "") : "";
   document.getElementById("f_notes").value = item ? (item.notes || "") : "";
   document.getElementById("assetModal").classList.add("open");
@@ -940,21 +1141,30 @@ async function saveAssetForm() {
   if (!name) { showToast("⚠️ กรุณากรอกชื่ออุปกรณ์"); return; }
   const nextNum = String(assets.length + 1).padStart(3, "0");
   const rawId = document.getElementById("f_assetId").value.trim() || `IT-${nextNum}`;
+  const existing = editingAssetId ? assets.find(a => a.id === editingAssetId) : null;
   const docId = editingAssetId || rawId.replace(/[^a-zA-Z0-9_-]/g, "_") + "_" + Date.now().toString().slice(-4);
+  const qtyTotal = Math.max(1, parseInt(document.getElementById("f_qtyTotal").value, 10) || 1);
+  const fSt = document.getElementById("f_status").value || "Available";
+  let qtyOut = existing ? (existing.qtyOut || 0) : 0;
+  if (fSt === "Available") qtyOut = 0;
+  else if (fSt === "CheckedOut" && qtyOut === 0) qtyOut = qtyTotal;
 
-  const payload = {
+  const payload = normalizeAsset({
     id: docId,
     assetId: rawId,
     name,
     category: document.getElementById("f_category").value.trim() || "Other IT",
     brand: document.getElementById("f_brand").value.trim(),
     serial: document.getElementById("f_serial").value.trim(),
+    qtyTotal,
+    qtyOut,
     location: document.getElementById("f_location").value.trim() || "ห้อง Stock IT",
-    status: document.getElementById("f_status").value || "Available",
+    status: fSt,
     holder: document.getElementById("f_holder").value.trim(),
+    dueDate: existing ? (existing.dueDate || "") : "",
     notes: document.getElementById("f_notes").value.trim(),
     updatedAt: new Date().toISOString()
-  };
+  });
 
   if (editingAssetId) {
     const idx = assets.findIndex(a => a.id === editingAssetId);
@@ -984,10 +1194,16 @@ function openCheckoutModal(id, actionType) {
   if (!item) return;
   checkoutTargetId = id;
   checkoutActionType = actionType;
+  const availQ = Math.max(0, item.qtyTotal - item.qtyOut);
+  const maxQ = actionType === "OUT" ? availQ : item.qtyOut;
+
   document.getElementById("checkoutModalTitle").textContent = actionType === "OUT" ? "📤 บันทึกการเบิกอุปกรณ์" : "↩ บันทึกการรับคืนอุปกรณ์";
   document.getElementById("checkoutAssetSummary").innerHTML =
-    `<strong>${escapeHtml(item.assetId)} — ${escapeHtml(item.name)}</strong><br>S/N: <code>${escapeHtml(item.serial || "-")}</code> • ที่เก็บ: ${escapeHtml(item.location || "-")}`;
+    `<strong>${escapeHtml(item.assetId)} — ${escapeHtml(item.name)}</strong><br>S/N: <code>${escapeHtml(item.serial || "-")}</code> • คงเหลือ: <strong>${availQ}/${item.qtyTotal} ชิ้น</strong> • ที่เก็บ: ${escapeHtml(item.location || "-")}`;
   document.getElementById("c_requester").value = actionType === "IN" ? (item.holder || "") : "";
+  const qtyEl = document.getElementById("c_qty");
+  qtyEl.max = Math.max(1, maxQ);
+  qtyEl.value = 1;
   document.getElementById("c_purpose").value = "";
   document.getElementById("c_dueDate").value = "";
   document.getElementById("c_condition").value = "ปกติ (Good)";
@@ -1005,16 +1221,31 @@ async function confirmCheckout() {
   const requester = document.getElementById("c_requester").value.trim();
   if (!requester) { showToast("⚠️ กรุณาระบุชื่อผู้เบิกหรือผู้คืน"); return; }
 
+  const qtyReq = Math.max(1, parseInt(document.getElementById("c_qty").value, 10) || 1);
+  const availQ = Math.max(0, item.qtyTotal - item.qtyOut);
   const purpose = document.getElementById("c_purpose").value.trim();
   const dueDate = document.getElementById("c_dueDate").value;
   const condition = document.getElementById("c_condition").value;
 
+  let actualQty = qtyReq;
   if (checkoutActionType === "OUT") {
-    item.status = "CheckedOut";
-    item.holder = requester;
+    actualQty = Math.min(qtyReq, Math.max(1, availQ));
+    item.qtyOut = Math.min(item.qtyTotal, (item.qtyOut || 0) + actualQty);
+    item.holder = item.qtyTotal > 1 ? `${requester} (${item.qtyOut})` : requester;
+    if (dueDate) item.dueDate = dueDate;
+    item.status = item.qtyOut >= item.qtyTotal ? "CheckedOut" : "PartialOut";
   } else {
-    item.status = condition === "ชำรุด (Damaged)" ? "Broken" : "Available";
-    item.holder = "";
+    actualQty = Math.min(qtyReq, Math.max(1, item.qtyOut));
+    item.qtyOut = Math.max(0, (item.qtyOut || 0) - actualQty);
+    if (condition === "ชำรุด (Damaged)") {
+      item.status = "Broken";
+    } else if (item.qtyOut === 0) {
+      item.status = "Available";
+      item.holder = "";
+      item.dueDate = "";
+    } else {
+      item.status = "PartialOut";
+    }
   }
   item.updatedAt = new Date().toISOString();
 
@@ -1025,6 +1256,7 @@ async function confirmCheckout() {
     assetId: item.assetId,
     itemName: item.name,
     serial: item.serial || "",
+    qty: actualQty,
     requester,
     purpose,
     dueDate,
@@ -1036,7 +1268,126 @@ async function confirmCheckout() {
   closeCheckoutModal();
   await saveAssetToCloud(item);
   await saveLogToCloud(logEntry);
-  showToast(checkoutActionType === "OUT" ? `📤 บันทึกเบิก "${item.name}" ให้ ${requester} แล้ว` : `↩ รับคืน "${item.name}" เรียบร้อย`);
+  showToast(checkoutActionType === "OUT" ? `📤 บันทึกเบิก "${item.name}" (${actualQty} ชิ้น) ให้ ${requester} แล้ว` : `↩ รับคืน "${item.name}" (${actualQty} ชิ้น) เรียบร้อย`);
+}
+
+// ===== QR CODE STICKER PRINTING =====
+function openQrPrintModal(targetIds = null) {
+  const list = targetIds ? assets.filter(a => targetIds.includes(a.id)) : assets;
+  const grid = document.getElementById("qrLabelGrid");
+  if (!list.length) { showToast("⚠️ ไม่มีรายการอุปกรณ์สำหรับพิมพ์ป้าย QR"); return; }
+
+  const baseUrl = location.href.split("?")[0];
+  grid.innerHTML = list.map((a, idx) => `
+    <div class="qr-sticker-card">
+      <div class="qr-code-box" id="qrCanvas_${idx}"></div>
+      <div class="qr-sticker-info">
+        <div style="font-family:var(--mono); font-size:12px; font-weight:800; color:#2563EB;">${escapeHtml(a.assetId)}</div>
+        <div style="font-size:12px; font-weight:700; line-height:1.25; overflow:hidden; text-overflow:ellipsis;">${escapeHtml(a.name)}</div>
+        <div style="font-family:var(--mono); font-size:10.5px; color:#475569;">S/N: ${escapeHtml(a.serial || "-")}</div>
+        <div style="font-size:10px; color:#64748B;">📍 ${escapeHtml(a.location || "-")}</div>
+      </div>
+    </div>
+  `).join("");
+
+  document.getElementById("qrPrintModal").classList.add("open");
+
+  if (typeof QRCode !== "undefined") {
+    list.forEach((a, idx) => {
+      const box = document.getElementById(`qrCanvas_${idx}`);
+      if (!box) return;
+      const qrText = baseUrl.startsWith("http")
+        ? `${baseUrl}?asset=${encodeURIComponent(a.assetId)}`
+        : (a.serial || a.assetId);
+      new QRCode(box, {
+        text: qrText,
+        width: 72,
+        height: 72,
+        colorDark: "#0F172A",
+        colorLight: "#FFFFFF",
+        correctLevel: QRCode.CorrectLevel.M
+      });
+    });
+  }
+}
+
+// ===== CAMERA BARCODE / QR SCANNER =====
+async function stopCameraScanner() {
+  if (html5QrScanner) {
+    try { await html5QrScanner.stop(); } catch (e) {}
+    try { await html5QrScanner.clear(); } catch (e) {}
+    html5QrScanner = null;
+  }
+}
+
+async function openCameraScanner(mode = "search") {
+  scannerMode = mode;
+  document.getElementById("scannerModal").classList.add("open");
+  document.getElementById("scannerSubText").textContent = mode === "fillSerial"
+    ? "ส่องกล้องที่บาร์โค้ด Serial Number เพื่อกรอกลงในช่องอัตโนมัติ"
+    : "ส่องกล้องไปที่บาร์โค้ด S/N หรือสติกเกอร์ QR Code เพื่อค้นหาและเบิก–คืน";
+
+  if (typeof Html5Qrcode === "undefined") {
+    showToast("⚠️ ไม่พบไลบรารีกล้องสแกนในเบราว์เซอร์นี้");
+    return;
+  }
+  await stopCameraScanner();
+  try {
+    html5QrScanner = new Html5Qrcode("qrReaderBox");
+    await html5QrScanner.start(
+      { facingMode: "environment" },
+      { fps: 10, qrbox: { width: 240, height: 150 } },
+      async (decodedText) => {
+        await stopCameraScanner();
+        document.getElementById("scannerModal").classList.remove("open");
+        handleScannedCode(decodedText);
+      },
+      () => {}
+    );
+  } catch (err) {
+    showToast("⚠️ ไม่สามารถเปิดกล้องได้ (กรุณาอนุญาตสิทธิ์กล้องบน HTTPS)");
+  }
+}
+
+function handleScannedCode(rawText) {
+  let code = String(rawText || "").trim();
+  if (code.includes("?asset=")) {
+    try {
+      const u = new URL(code);
+      code = u.searchParams.get("asset") || code;
+    } catch (e) {}
+  }
+  if (scannerMode === "fillSerial") {
+    document.getElementById("f_serial").value = code;
+    showToast(`📷 อ่าน Serial: ${code} เรียบร้อย`);
+    return;
+  }
+  document.getElementById("searchAssetBox").value = code;
+  renderInventory();
+  const matched = assets.find(a =>
+    (a.assetId && a.assetId.toLowerCase() === code.toLowerCase()) ||
+    (a.serial && a.serial.toLowerCase() === code.toLowerCase())
+  );
+  if (matched) {
+    showToast(`🎯 พบอุปกรณ์: ${matched.assetId} — ${matched.name}`);
+    const action = matched.qtyOut > 0 && matched.qtyOut >= matched.qtyTotal ? "IN" : "OUT";
+    openCheckoutModal(matched.id, action);
+  } else {
+    showToast(`🔍 ค้นหาคำว่า "${code}" ในทะเบียนแล้ว`);
+  }
+}
+
+function copyOverdueLineAlert() {
+  const overdueItems = assets.filter(isAssetOverdue);
+  if (!overdueItems.length) return;
+  const lines = overdueItems.map((a, i) =>
+    `${i + 1}. ${a.assetId} ${a.name} (${a.qtyOut} ชิ้น) — ผู้เบิก: ${a.holder || "-"} (กำหนดคืน ${a.dueDate})`
+  );
+  const msg = `⏰ แจ้งเตือนอุปกรณ์ IT เกินกำหนดคืน (${getTodayISO()})\n` + lines.join("\n");
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(msg).catch(() => {});
+  }
+  showToast("📋 คัดลอกข้อความแจ้งเตือนส่ง LINE เรียบร้อย!");
 }
 
 function exportExcel() {
@@ -1045,17 +1396,18 @@ function exportExcel() {
   const invRows = assets.map(a => ({
     "Asset ID": a.assetId, "Item Name": a.name, "Category": a.category,
     "Brand / Model": a.brand, "Serial Number (S/N)": a.serial,
+    "Total Qty": a.qtyTotal, "Checked Out Qty": a.qtyOut, "Available Qty": Math.max(0, a.qtyTotal - a.qtyOut),
     "Location": a.location, "Status": statusLabelThai(a.status),
-    "Current Holder": a.holder, "Notes": a.notes
+    "Current Holder": a.holder, "Due Date": a.dueDate || "", "Notes": a.notes
   }));
   const logRows = logs.map(l => ({
     "Timestamp": l.timestamp, "Action": l.action === "OUT" ? "Check-Out" : "Check-In",
     "Asset ID": l.assetId, "Item Name": l.itemName, "Serial Number": l.serial,
-    "Requester": l.requester, "Purpose / Job": l.purpose, "Due Date": l.dueDate, "Condition": l.condition
+    "Qty": l.qty || 1, "Requester": l.requester, "Purpose / Job": l.purpose, "Due Date": l.dueDate, "Condition": l.condition
   }));
   XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(invRows), "Inventory");
   XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(logRows), "Checkout Log");
-  XLSX.writeFile(wb, `IT_Equipment_Inventory_${new Date().toISOString().slice(0,10)}.xlsx`);
+  XLSX.writeFile(wb, `IT_Equipment_Inventory_${getTodayISO()}.xlsx`);
   showToast("⬇ ดาวน์โหลดไฟล์ Excel เรียบร้อย");
 }
 
@@ -1063,7 +1415,7 @@ function exportJsonBackup() {
   const blob = new Blob([JSON.stringify({ exportedAt: new Date().toISOString(), assets, logs }, null, 2)], { type: "application/json" });
   const a = document.createElement("a");
   a.href = URL.createObjectURL(blob);
-  a.download = `it_equipment_backup_${new Date().toISOString().slice(0,10)}.json`;
+  a.download = `it_equipment_backup_${getTodayISO()}.json`;
   a.click();
   showToast("💾 สำรองไฟล์ JSON เรียบร้อย");
 }
@@ -1071,6 +1423,13 @@ function exportJsonBackup() {
 window.addEventListener("DOMContentLoaded", () => {
   loadLocalData();
   renderAll();
+
+  // Support opening directly from QR Code link ?asset=IT-001
+  const urlAsset = new URLSearchParams(location.search).get("asset");
+  if (urlAsset) {
+    document.getElementById("searchAssetBox").value = urlAsset;
+    renderInventory();
+  }
 
   const loginGate = document.getElementById("loginGate");
   const appRoot = document.getElementById("appRoot");
@@ -1123,7 +1482,6 @@ window.addEventListener("DOMContentLoaded", () => {
     appRoot.classList.add("app-hidden");
   });
 
-  // Tabs
   const titles = {
     inventory: "📦 ทะเบียนอุปกรณ์ไอที (IT Equipment Inventory)",
     logs: "🔄 ประวัติการเบิก–คืนอุปกรณ์ (Checkout & Return Logs)"
@@ -1163,6 +1521,18 @@ window.addEventListener("DOMContentLoaded", () => {
   document.getElementById("cancelCheckoutBtn").addEventListener("click", closeCheckoutModal);
   document.getElementById("confirmCheckoutBtn").addEventListener("click", confirmCheckout);
 
+  document.getElementById("openScannerSearchBtn").addEventListener("click", () => openCameraScanner("search"));
+  document.getElementById("scanSerialFieldBtn").addEventListener("click", () => openCameraScanner("fillSerial"));
+  document.getElementById("closeScannerBtn").addEventListener("click", async () => {
+    await stopCameraScanner();
+    document.getElementById("scannerModal").classList.remove("open");
+  });
+
+  document.getElementById("printAllQrBtn").addEventListener("click", () => openQrPrintModal(null));
+  document.getElementById("closeQrPrintBtn").addEventListener("click", () => document.getElementById("qrPrintModal").classList.remove("open"));
+  document.getElementById("doPrintQrBtn").addEventListener("click", () => window.print());
+
+  document.getElementById("copyOverdueLineBtn").addEventListener("click", copyOverdueLineAlert);
   document.getElementById("exportExcelBtn").addEventListener("click", exportExcel);
   document.getElementById("exportJsonBtn").addEventListener("click", exportJsonBackup);
   document.getElementById("importJsonInput").addEventListener("change", (e) => {
@@ -1172,7 +1542,7 @@ window.addEventListener("DOMContentLoaded", () => {
     reader.onload = async () => {
       try {
         const parsed = JSON.parse(reader.result);
-        if (Array.isArray(parsed.assets)) assets = parsed.assets;
+        if (Array.isArray(parsed.assets)) assets = parsed.assets.map(normalizeAsset);
         if (Array.isArray(parsed.logs)) logs = parsed.logs;
         saveLocalData();
         renderAll();
@@ -1186,7 +1556,6 @@ window.addEventListener("DOMContentLoaded", () => {
     e.target.value = "";
   });
 
-  // Bulk Paste
   const bulkModal = document.getElementById("bulkModal");
   document.getElementById("openBulkImportBtn").addEventListener("click", () => bulkModal.classList.add("open"));
   document.getElementById("closeBulkModalBtn").addEventListener("click", () => bulkModal.classList.remove("open"));
@@ -1201,7 +1570,7 @@ window.addEventListener("DOMContentLoaded", () => {
       if (cols.length < 2) continue;
       if (cols[0].toLowerCase() === "asset id" || cols[1].toLowerCase() === "item name") continue;
       const assetId = cols[0] || `IT-${String(assets.length + 1).padStart(3, "0")}`;
-      const item = {
+      const item = normalizeAsset({
         id: assetId.replace(/[^a-zA-Z0-9_-]/g, "_") + "_" + Date.now().toString().slice(-4) + "_" + i,
         assetId,
         name: cols[1] || "Unnamed Item",
@@ -1209,11 +1578,14 @@ window.addEventListener("DOMContentLoaded", () => {
         brand: cols[3] || "",
         serial: cols[4] || "",
         location: cols[5] || "ห้อง Stock IT",
+        qtyTotal: parseInt(cols[6], 10) || 1,
+        qtyOut: 0,
         status: "Available",
         holder: "",
-        notes: cols[6] || "",
+        dueDate: "",
+        notes: cols[7] || "",
         updatedAt: new Date().toISOString()
-      };
+      });
       assets.unshift(item);
       await saveAssetToCloud(item);
       added++;
