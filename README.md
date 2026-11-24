@@ -1,36 +1,97 @@
-# Report Manager
+# LIVE EVENT REPORT MANAGER & ENGINEER OPERATIONS (AIS PLAY)
 
-เว็บภายในทีมสำหรับบันทึกและสรุปสถานะ Live Event feeds โดยใช้ Firebase Authentication และ Firestore
+ระบบเว็บแอปพลิเคชันสำหรับบริหารจัดการตารางถ่ายทอดสดกีฬา ตรวจสอบสถานะสัญญาณ คำนวณชั่วโมงทำงานจริงของวิศวกร (Day Shift / Night Shift / Pre-check Standby) แปลงเวลาโลกสำหรับห้องควบคุมสัญญาณ (MCR) และออกรายงานประจำสัปดาห์/รายวัน
 
-## Phase 1: Data safety
+- **Live Web App (Cloudflare Pages):** https://liveaisplay.pages.dev/
+- **GitHub Repository:** https://github.com/markerhz/reportmanager
+- **Primary Schedule Source (Google Drive `.xlsx`):** `AIS_PLAY_Engineer_Resource_Precheck_Template.xlsx` (`1zqMGz59AVSDI8rvxVQdIY1OKrWTamQpo`)
+- **Cloud Database:** Google Firebase Authentication & Cloud Firestore (`live-event-report`)
 
-- การลบจากหน้าเว็บเป็น soft delete และกู้คืนจากถังขยะได้ 30 วัน
-- ก่อนแก้ไข ลบ หรือย้อนกลับ ระบบเก็บ snapshot เดิมใน `feeds/{id}/history`
-- ผู้ใช้ที่ล็อกอินทุกคนเปิดประวัติและกู้คืนได้
-- GitHub Actions สำรองข้อมูลและประวัติเป็น JSON ทุกวัน เก็บ artifact 30 วัน
-- cleanup ทำงานหลัง upload artifact สำเร็จเท่านั้น
-- ไม่มีปุ่มลบถาวรในหน้าเว็บ
+---
 
-## เปิดใช้ Daily Backup (ครั้งเดียว)
+## 1. โครงสร้างไฟล์ใน Repository
 
-1. เปลี่ยน repository เป็น **Private** ก่อน เพราะ artifact มีข้อมูลจริงของทีม
-2. Firebase Console → Project settings → Service accounts → Generate new private key
-3. GitHub → Settings → Secrets and variables → Actions → New repository secret
-4. ตั้งชื่อ `FIREBASE_SERVICE_ACCOUNT` และวาง JSON ทั้งไฟล์เป็นค่า Secret
-5. GitHub → Actions → Daily Firestore backup → Run workflow เพื่อทดสอบครั้งแรก
-6. ตรวจว่า run สำเร็จและมี artifact ดาวน์โหลดได้ ก่อนนำ Phase 1 ไปใช้กับข้อมูลจริง
+| ไฟล์ / โฟลเดอร์ | หน้าที่หลัก |
+| :--- | :--- |
+| **`index.html`** | ไฟล์หลักของระบบทั้งหมด (Single-File Web App) รวม UI, CSS, Chart.js, SheetJS (`xlsx`), html2canvas, Firebase SDK, ฐานข้อมูลสำรองล่าสุด (1,599 รายการ) และระบบแปลงเวลาโลก |
+| **`README.md`** | เอกสารสรุปสถาปัตยกรรม ฟังก์ชันทั้งหมด วิธีซิงก์ข้อมูล และการ Deploy (อัปเดตให้เป็นปัจจุบันทุกครั้งที่มีการปรับปรุงระบบ) |
+| **`firestore.rules`** | กฎความปลอดภัยของ Cloud Firestore (บังคับล็อกอิน Firebase Auth ก่อนอ่าน/เขียนข้อมูล) |
+| **`package.json`** | กำหนด Dependencies (`firebase-admin`, `googleapis`, `xlsx`) และสคริปต์คำสั่ง `sync`, `backup`, `cleanup`, `check` |
+| **`.github/workflows/daily-backup.yml`** | GitHub Actions สำรองข้อมูล Firestore รายวันเวลา 01:00 น. (เก็บ Artifact ย้อนหลัง 30 วัน) และล้างถังขยะที่เกิน 30 วัน |
+| **`.github/workflows/sync-sheets.yml`** | GitHub Actions ซิงก์ข้อมูลจาก Google Drive `.xlsx` เข้า Firestore อัตโนมัติทุกชั่วโมง |
+| **`scripts/firestore-maintenance.mjs`** | สคริปต์ Back up และ Clean up ข้อมูลใน Firestore (รองรับทั้ง Firebase Admin SDK และ Firestore REST API Fallback) |
+| **`scripts/sync-sheets.mjs`** | สคริปต์อ่านแท็บ `Event Schedule` จากไฟล์ `.xlsx` แปลงวันที่/เวลาเป็นมาตรฐาน ISO และอัปเดตเข้า Firestore |
 
-อย่า commit ไฟล์ service-account JSON ลง repository
+---
 
-## Firestore Rules
+## 2. ความสามารถและฟังก์ชันทั้งหมดในระบบ (`index.html`)
 
-ไฟล์ `firestore.rules` เป็น rules ที่แนะนำสำหรับทีมนี้: ผู้ใช้ต้องล็อกอิน, หน้าเว็บลบถาวรไม่ได้ และ history แก้ไขย้อนหลังไม่ได้ การเพิ่มไฟล์นี้ยังไม่ deploy rules ให้อัตโนมัติ ต้องนำไปตรวจและ deploy ใน Firebase Console แยกต่างหาก
+### 🔐 ระบบยืนยันตัวตน (Firebase Authentication Gate)
+- บังคับล็อกอินด้วย **Email & Password** ผ่าน Firebase Auth ก่อนเข้าถึงข้อมูลหน้าเว็บทุกส่วน (ตัดโหมด Guest / Offline Bypass ออกเพื่อความปลอดภัย)
+- ต้องเพิ่มโดเมนที่ใช้งานจริง (เช่น `liveaisplay.pages.dev`) ใน **Firebase Console > Authentication > Settings > Authorized domains**
 
-## ตรวจสคริปต์ในเครื่อง
+### 🔄 การเชื่อมต่อและจัดการฐานข้อมูล (Sidebar Footer)
+วางปุ่มควบคุมฐานข้อมูลแบบแบ่งครึ่งซ้าย-ขวา (50% / 50%) ไว้เหนือป้ายสถานะ `... feeds logged` ที่มุมซ้ายล่าง:
+1. **`🔄 ดึงข้อมูล` (Sync from Google Sheet / `.xlsx`):**
+   - ดึงข้อมูลจากแท็บ `Event Schedule` โดยกำหนดช่วง `range=C1899:K6000&headers=0` และกรอง `where K is not null` เพื่อข้ามแถวขยะ `00-Jan-1900 / Kiatpetch / FALSE` ด้านบนสุดของชีต
+   - รองรับการดึงผ่าน **Google Visualization JSONP** (ไม่ติด CORS), `fetch()`, ดาวน์โหลดไฟล์ `.xlsx` โดยตรงผ่าน SheetJS และผสานอัตโนมัติผ่าน `mergeWithEmbeddedFeeds()` เพื่อรับประกันว่าข้อมูลไม่ลดต่ำกว่าชุดล่าสุดที่ตรวจสอบแล้ว (**1,599 รายการ**, ช่วงวันที่ `2026-08-15` ถึง `2026-11-23`)
+   - แปลงวันที่ทุกรูปแบบ (`01-Sep-2026`, `Date(2026,8,1)`, ไทย/อังกฤษ) เป็นมาตรฐาน ISO `YYYY-MM-DD` และแปลงเวลาเป็น `HH:MM` พร้อมกู้คืนหมายเลข Channel ที่เป็นตัวเลข (`901`, `952`)
+2. **`🗑️ ลบข้อมูล` (Clear Firebase DB):**
+   - ล้างข้อมูลในคอลเลกชัน `feeds` และ `reports` บน Firebase Firestore (Batch Delete ทีละ 400 รายการ) พร้อมกล่องยืนยันก่อนลบ
 
-```bash
-npm ci
-npm run check
-```
+### 🌐 นาฬิกาโลกบนหัวเว็บ & แท็บคำนวณเวลาโลก (`🌍 คำนวณเวลาโลก`)
+- **Topbar Live Clocks:** แสดงเวลาเดินวินาทีจริงของ **🇹🇭 THA (`UTC+7`)**, **🌐 UTC (`UTC+0`)** และโซนที่ 3 ที่สลับดูเองได้ (`ยุโรปกลาง CET/CEST`, `อังกฤษ UK`, `ยุโรปตะวันออก EET`, `ซาอุฯ/กาตาร์`, `ญี่ปุ่น/เกาหลี`, `ออสเตรเลีย`, `อเมริกา`) โดยคำนวณ Daylight Saving Time อัตโนมัติ
+- **Quick Time Converter:** กรอกวันที่/เวลาต้นทางจากคิวถ่ายทอดสดต่างประเทศ (UTC/ยุโรป) เพื่อแปลงเป็นเวลาไทย พร้อมป้ายแจ้งเตือนกรณี **ข้ามเที่ยงคืน (+1 วัน)** และคำนวณเวลาเข้ากะเตรียมงานล่วงหน้า (`-2 ชม.`, `-4 ชม.`, `-1 ชม.`) ทันที
+- **Batch Time Converter & 24-Hour Matrix:** วางรายการแข่งขันหลายบรรทัดเพื่อแปลงเป็นเวลาไทยพร้อมกันทั้งชุด และตารางเทียบเวลา 24 ชั่วโมง
 
-การรัน backup/cleanup ต้องมี environment variable `FIREBASE_SERVICE_ACCOUNT` และจะเชื่อมต่อข้อมูลจริง จึงควรรันผ่าน GitHub Actions เท่านั้น
+### 📊 ภาพรวมการถ่ายทอดสด (`📊 Dashboard`)
+- **การ์ด KPI 5 ช่อง:** Total, Pass, Fix, Issue, Wait (สไตล์ Bento Card พร้อม Hover Glow)
+- **ตัวกรองช่วงเวลา:** เลือกดูแบบ `รายสัปดาห์` (เริ่มต้นที่สัปดาห์ปัจจุบันตามเวลาประเทศไทย พร้อมปุ่มเลื่อนสัปดาห์และปฏิทินเลือกวัน), `ช่วงวันที่` หรือ `ทั้งหมด`
+- **กราฟวิเคราะห์ (Chart.js):** กราฟแนวโน้มรายวัน (Stacked Bar / Line / Area) และกราฟสัดส่วนตาม Channel จริง (Horizontal Bar / Vertical Bar / Donut / Polar Area) พร้อมปุ่ม **`📸`** บันทึกรูปภาพ PNG แยกทุกการ์ด
+
+### ⏱️ ระบบคำนวณชั่วโมงทำงานวิศวกร (`⏱️ ชั่วโมงทำงานวิศวกร`)
+- **ตัวกรองช่วงเวลาแบบ Dynamic:** สลับดูได้ทั้ง `📆 รายสัปดาห์`, `📅 รายเดือน` (สร้างรายการเดือนจากฐานข้อมูลจริงอัตโนมัติ รองรับเดือนใหม่ๆ ในอนาคต) และ `📊 รวมทั้งหมด`
+- **กฎการคำนวณเวลาเข้ากะ (Pre-check Rules):**
+  - ฟุตบอลไทยลีก / ในประเทศ: เตรียมงานล่วงหน้า **+4 ชั่วโมง**
+  - กีฬาต่างประเทศ (UCL, พรีเมียร์ลีก, บุนเดสลีกา, เทนนิส, F1 ฯลฯ): เตรียมงานล่วงหน้า **+2 ชั่วโมง**
+  - เอเชียนเกมส์ / พาราเกมส์: เตรียมงานล่วงหน้า **+1 ชั่วโมง**
+  - ตัดรอบกะวันทำงานที่ **04:00 น.** และแยกคำนวณ **Day Shift** (จบก่อน 24:00 น.) กับ **Night Shift** (เริ่มดึกหรือลากข้ามคืน) โดยไม่นับ `NOC VSS.`
+- **5 แถบย่อย:**
+  1. **สรุปชั่วโมงรายเดือน:** การ์ดจัดอันดับวิศวกร 10 คน (เหรียญ `🥇 #1`, `🥈 #2`, `🥉 #3`), กราฟ Day vs Night และตารางสรุปพร้อมปุ่ม Export `.xlsx`
+  2. **แนวโน้มรายเดือน:** เปรียบเทียบชั่วโมงทำงานสะสมข้ามเดือน
+  3. **ตารางกะรายวัน:** แผนภูมิ Gantt 24 ชม. (แกน `04:00` – `02:00+1`) แบบทำงานยาวต่อเนื่อง
+  4. **แจกแจงตามฟีดกีฬา:** แยกแถบเวลาตาม Channel หรือตามลีกกีฬา แยกสีช่วงเตรียมงานกับช่วงถ่ายทอดสด
+  5. **ค้นหาแมตช์รายบุคคล:** ดูรายการแมตช์และเวลาเข้ากะของวิศวกรแต่ละคน
+
+### 📝 บันทึกข้อมูล, 📄 ออกรายงาน, 🗑️ ถังขยะ และ 📖 คู่มือใช้งาน
+- **บันทึกข้อมูล:** เพิ่ม/แก้ไข/ลบรายการเดี่ยว, นำเข้าข้อมูลจาก Excel/Google Sheet แบบ Tab-Separated (Bulk Paste), ค้นหา-กรอง และ Export เป็น CSV / `.xlsx` (แสดงครบทุกรายการ ไม่ตัดที่ 300 แถว)
+- **ออกรายงาน:** เลือกดูรายงานรายสัปดาห์ (มีปุ่มเลื่อน, ดรอปดาวน์สัปดาห์พร้อมจำนวนฟีด และปฏิทินเลือกวัน), ช่วงวันที่ หรือทั้งหมด พร้อมปุ่ม `📸 บันทึกรูปภาพ` และ `🖨 พิมพ์`
+- **ถังขยะ & คู่มือใช้งาน:** กู้คืนหรือลบรายการถาวร และหน้าคู่มือการใช้งานฉบับสมบูรณ์ 6 หมวดหมู่ในตัว
+
+---
+
+## 3. การตั้งค่า Hosting (Cloudflare Pages)
+
+- **URL เว็บจริง:** `https://liveaisplay.pages.dev/`
+- **Git Integration:** เชื่อมต่อกับ `markerhz/reportmanager` (Branch `main`)
+- **Build Configuration:**
+  - **Framework preset:** `None`
+  - **Build command:** *(ปล่อยว่าง)*
+  - **Build output directory:** `/`
+- **หมายเหตุ:** ทุกครั้งที่มีการอัปเดต `index.html` ขึ้น Branch `main` ระบบ Cloudflare Pages จะ Deploy เว็บใหม่ให้อัตโนมัติภายใน ~20 วินาที
+
+---
+
+## 4. บันทึกการอัปเดตล่าสุด (Changelog)
+
+- **2026-11-24:**
+  - แก้ไขบั๊กดึงข้อมูลไม่ครบโดยกำหนดช่วง `range=C1899:K6000&headers=0` บน `gviz/tq` เพื่อข้ามแถวขยะ 367 แถวด้านบนสุดของชีต และเพิ่มการดึงผ่าน JSONP + `mergeWithEmbeddedFeeds()`
+  - อัปเดตฐานข้อมูลฝังใน `index.html` เป็น **1,599 รายการ** (ช่วง `2026-08-15` ถึง `2026-11-23`) และปลดล็อกการจำกัดการแสดงผล 300 แถวในตาราง
+  - ย้ายโฮสติ้งหลักมาที่ Cloudflare Pages (`https://liveaisplay.pages.dev/`) และปรับปรุง `README.md` ฉบับสมบูรณ์
+- **2026-11-19:**
+  - ปลดล็อกดึงข้อมูลเดือนสิงหาคม 2026, ปรับปรุง `sync-sheets.mjs` และ `daily-backup.yml`, ลบไฟล์เก่าที่ไม่ใช้งานออกจากรีโป
+- **2026-11-10:**
+  - ตัดโหมด Guest / Offline Bypass ออกจากหน้า Login Gate เพื่อบังคับยืนยันตัวตน 100%
+  - ปรับตัวกรองหน้าชั่วโมงทำงานวิศวกรให้รองรับรายสัปดาห์และรายเดือนแบบ Dynamic
+- **2026-11-09:**
+  - เพิ่มแถบนาฬิกาโลกเรียลไทม์บน Topbar, หน้าโปรแกรมคำนวณเวลาโลก (UTC / ยุโรป / ไทย), ย้ายปุ่มดึง/ลบข้อมูลมาจัดวางแบบ 50/50 เหนือ `feeds logged` และเขียนคู่มือใช้งาน 6 หมวดในแท็บคู่มือ
